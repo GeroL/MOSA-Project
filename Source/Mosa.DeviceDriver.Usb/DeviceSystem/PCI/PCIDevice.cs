@@ -120,13 +120,13 @@ namespace Mosa.DeviceSystem.PCI
 		/// </summary>
 		/// <value>The sub device ID.</value>
 		public ushort SubDeviceID { get { return pciController.ReadConfig8(Bus, Slot, Function, 0x0E); } }
+
         /// <summary>
         /// Gets the sub device ID.
         /// </summary>
         /// <value>The sub device ID.</value>
         public byte Capabilities { get { return (byte)(pciController.ReadConfig8(Bus, Slot, Function, 0x34) & 0xFCU); } }
-
-		/// <summary>
+        /// <summary>
 		/// Gets the IRQ.
 		/// </summary>
 		/// <value>The IRQ.</value>
