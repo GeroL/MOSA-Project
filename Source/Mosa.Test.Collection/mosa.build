@@ -27,6 +27,7 @@
                     <include name="CallTests.cs"/>
                     <include name="ConvTests.cs"/>
                     <include name="CallVirtualTests.cs"/>
+                    <include name="ForeachTests.cs"/>
                     <include name="DelegateTests.cs"/>
                     <include name="ExceptionHandlingTests.cs"/>
                     <include name="GenericCallTests.cs"/>
@@ -35,6 +36,7 @@
                     <include name="IsInstTests.cs"/>
                     <include name="FibonacciTests.cs"/>
                     <include name="GenericInterfaceTests.cs"/>
+                    <include name="StaticFieldTests.cs"/>
                     <include name="SwitchTests.cs"/>
                     <include name="LdlocaTests.cs"/>
                     <include name="LdargaTests.cs"/>
