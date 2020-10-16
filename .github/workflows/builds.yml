@@ -20,8 +20,8 @@ jobs:
         run: echo repository=${{ github.repository }} event_name=${{ github.event_name }} ref=${{ github.ref }} head_ref=${{ github.head_ref }} base_ref=${{ github.base_ref }}
       - name: Checkout
         uses: actions/checkout@v1
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.0.1
+    #  - name: Setup MSBuild
+     #   uses: microsoft/setup-msbuild@v1.0.1
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '5.0.100-rc.2.20479.15' # SDK Version to use; x will use the latest version of the 5.0 channel
@@ -31,7 +31,7 @@ jobs:
         run: dotnet restore Mosa.sln
         working-directory: Source
       - name: Build
-        run: msbuild Source/Mosa.sln /p:Version=${{ env.BUILD_VERSION }}
+        run: dotnet build Source/Mosa.Linux.sln
       - name: Create Installer
         run: ISCC.exe /DMyAppVersion=${{ env.BUILD_VERSION }}.${{ steps.mosa-project-build-number.outputs.build-number }} Source/Inno-Setup-Script/Mosa-Installer.iss
       - name: Create Package - Mosa.Tools.Package
