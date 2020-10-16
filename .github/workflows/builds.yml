@@ -31,7 +31,7 @@ jobs:
         run: dotnet restore Mosa.sln
         working-directory: Source
       - name: Build
-        run: dotnet build Source/Mosa.Linux.sln
+        run: dotnet build Source/Mosa.sln
       - name: Create Installer
         run: ISCC.exe /DMyAppVersion=${{ env.BUILD_VERSION }}.${{ steps.mosa-project-build-number.outputs.build-number }} Source/Inno-Setup-Script/Mosa-Installer.iss
       - name: Create Package - Mosa.Tools.Package
