@@ -15,6 +15,7 @@ namespace Mosa.Tool.Debugger
 		private static void Main(string[] args)
 		{
 			Application.EnableVisualStyles();
+			//Application.SetHighDpiMode(HighDpiMode.PerMonitorV2); //For developers using windows font scaling
 			Application.SetCompatibleTextRenderingDefault(false);
 
 			var main = new MainForm();

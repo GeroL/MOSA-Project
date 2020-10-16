@@ -191,6 +191,7 @@ namespace Mosa.Tool.Debugger
 			Text = "MOSA GDB Debugger v" + CompilerVersion.VersionString;
 
 			dockPanel.SuspendLayout(true);
+			dockPanel.Theme = new VS2015DarkTheme(); 
 			dockPanel.DockTopPortion = 54;
 
 			controlView.Show(dockPanel, DockState.DockTop);
@@ -509,7 +510,7 @@ namespace Mosa.Tool.Debugger
 
 		public void OnAddBreakPoint(Object sender, EventArgs e)
 		{
-			var args = (sender as Menu).Tag as AddBreakPointArgs;
+			var args = (sender as MenuStrip).Tag as AddBreakPointArgs;
 
 			if (string.IsNullOrWhiteSpace(args.Name))
 			{
@@ -523,35 +524,35 @@ namespace Mosa.Tool.Debugger
 
 		public void OnCopyToClipboardAsBreakPoint(Object sender, EventArgs e)
 		{
-			var text = (((sender as Menu).Tag) as BreakPoint).Name;
+			var text = (((sender as MenuStrip).Tag) as BreakPoint).Name;
 
 			Clipboard.SetText(text);
 		}
 
 		public void OnCopyToClipboard(Object sender, EventArgs e)
 		{
-			var text = (((sender as Menu).Tag) as string);
+			var text = (((sender as MenuStrip).Tag) as string);
 
 			Clipboard.SetText(text);
 		}
 
 		public void OnRemoveBreakPoint(Object sender, EventArgs e)
 		{
-			var breakpoint = (sender as Menu).Tag as BreakPoint;
+			var breakpoint = (sender as MenuStrip).Tag as BreakPoint;
 
 			RemoveBreakPoint(breakpoint);
 		}
 
 		public void OnAddWatch(Object sender, EventArgs e)
 		{
-			var args = (sender as Menu).Tag as AddWatchArgs;
+			var args = (sender as MenuStrip).Tag as AddWatchArgs;
 
 			AddWatch(args.Name, args.Address, args.Length);
 		}
 
 		public void OnRemoveWatch(Object sender, EventArgs e)
 		{
-			var watch = (sender as Menu).Tag as Watch;
+			var watch = (sender as MenuStrip).Tag as Watch;
 
 			RemoveWatch(watch);
 		}
