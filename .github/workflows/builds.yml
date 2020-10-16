@@ -24,7 +24,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.1
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '5.0.x' # SDK Version to use; x will use the latest version of the 5.0 channel
+          dotnet-version: '5.0.100-rc.2.20479.15' # SDK Version to use; x will use the latest version of the 5.0 channel
       - name: Setup Nuget.exe
         uses: nuget/setup-nuget@v1
       - name: Restore nuget Packages
