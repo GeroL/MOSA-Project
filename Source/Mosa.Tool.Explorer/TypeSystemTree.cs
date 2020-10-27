@@ -51,7 +51,7 @@ namespace Mosa.Tool.Explorer
 			{
 				if (Include == null || Include.Contains(type))
 				{
-					foreach (var method in type.Methods)
+					foreach (var method in type.Methods.Values)
 					{
 						if (Include == null || Include.Contains(method))
 						{
@@ -187,7 +187,7 @@ namespace Mosa.Tool.Explorer
 				var interfacesNodes = new TreeNode("Interfaces");
 				typeNode.Nodes.Add(interfacesNodes);
 
-				foreach (var interfaceType in type.Interfaces)
+				foreach (var interfaceType in type.Interfaces.Values)
 				{
 					var interfaceNode = new TreeNode(interfaceType.FullName);
 					interfacesNodes.Nodes.Add(interfaceNode);
@@ -202,7 +202,7 @@ namespace Mosa.Tool.Explorer
 
 				typeNode.Nodes.Add(fieldsNode);
 
-				foreach (var field in type.Fields)
+				foreach (var field in type.Fields.Values)
 				{
 					var fieldNode = new TreeNode(field.ShortName);
 					fieldsNode.Nodes.Add(fieldNode);
@@ -231,7 +231,7 @@ namespace Mosa.Tool.Explorer
 
 				typeNode.Nodes.Add(propertiesNode);
 
-				foreach (var property in type.Properties)
+				foreach (var property in type.Properties.Values)
 				{
 					if (Include == null || Include.Contains(property))
 					{
@@ -328,10 +328,10 @@ namespace Mosa.Tool.Explorer
 			{
 				typeNode.Nodes.Add(new TreeNode("Methods"));
 
-				var methodList = (new List<MosaMethod>(type.Methods)).OrderBy(o => o.ShortName).ToList();
+				var methodList = (new List<MosaMethod>(type.Methods.Values)).OrderBy(o => o.ShortName).ToList();
 
 				// Methods
-				foreach (var method in type.Methods)
+				foreach (var method in type.Methods.Values)
 				{
 					if (Include == null || Include.Contains(method))
 					{

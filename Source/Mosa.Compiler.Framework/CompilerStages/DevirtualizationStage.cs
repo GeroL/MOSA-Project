@@ -23,7 +23,7 @@ namespace Mosa.Compiler.Framework.CompilerStages
 				if (HasInterface(type))
 					continue;
 
-				foreach (var method in type.Methods)
+				foreach (var method in type.Methods.Values)
 				{
 					if (method.IsStatic || !method.IsVirtual)
 						continue;

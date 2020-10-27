@@ -125,7 +125,7 @@ namespace Mosa.Compiler.Framework.Analysis.LiveVariableAnalysis
 			if (!operand.IsValueType)
 				return false;
 
-			foreach (var field in operand.Type.Fields)
+			foreach (var field in operand.Type.Fields.Values)
 			{
 				if (field.IsStatic)
 					continue;

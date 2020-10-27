@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <DebugType>full</DebugType>
     <LangVersion>8.0</LangVersion>
     <OutputPath>..\..\bin\</OutputPath>
@@ -8,6 +8,7 @@
     <DisableStandardFrameworkResolution>true</DisableStandardFrameworkResolution>
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DocumentationFile />
@@ -20,4 +21,22 @@
   <ItemGroup>
     <ProjectReference Include="..\Mosa.Korlib\Mosa.Korlib.csproj" />
   </ItemGroup>
+
+	<ItemGroup>
+		<RuntimeGroup Include="mosa">
+			<!-- https://github.com/dotnet/runtime/blob/master/src/libraries/pkg/Microsoft.NETCore.Platforms/readme.md -->
+			<Parent>any</Parent>
+			<Architectures>x86;x64;arm</Architectures>
+			<Versions>0.1;0.2</Versions>
+		</RuntimeGroup>
+
+
+	</ItemGroup>
+	<Target Name="GenerateRuntimeJson" BeforeTargets="CreatePackage">
+		<!-- Generates a Runtime graph using RuntimeGroups and diffs it with the graph described by runtime.json and runtime.compatibility.json
+         Specifying UpdateRuntimeFiles=true skips the diff and updates those files.
+         The graph can be visualized using the generated dmgl -->
+		<MakeDir Directories="$(PackageReportDir)" />
+		<GenerateRuntimeGraph RuntimeGroups="@(RuntimeGroupWithQualifiers)" RuntimeJson="runtime.json" CompatibilityMap="runtime.compatibility.json" RuntimeDirectedGraph="$(PackageReportDir)$(Id)$(NuspecSuffix)-runtime.json.dgml" UpdateRuntimeFiles="$(UpdateRuntimeFiles)" />
+	</Target>
 </Project>

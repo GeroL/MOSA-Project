@@ -146,7 +146,12 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 				case ElementType.CModOpt: result = new CModOptSig((typeSig as ModifierSig).Modifier, ResolveGenericArgs(typeSig.Next)); break;
 				case ElementType.Module: result = new ModuleSig((typeSig as ModuleSig).Index, ResolveGenericArgs(typeSig.Next)); break;
 				case ElementType.Pinned: result = new PinnedSig(ResolveGenericArgs(typeSig.Next)); break;
-				case ElementType.FnPtr: throw new NotSupportedException("FnPtr is not supported.");
+				case ElementType.FnPtr:
+					if ((typeSig as FnPtrSig).Signature is null)
+						return null;
+
+					result = new FnPtrSig((typeSig as FnPtrSig).Signature);
+					break; // throw new NotSupportedException("FnPtr is not supported.");
 
 				case ElementType.Array:
 					var arraySig = (ArraySig)typeSig;

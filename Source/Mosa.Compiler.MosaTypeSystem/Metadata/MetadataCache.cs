@@ -1,8 +1,11 @@
 ﻿// Copyright (c) MOSA Project. Licensed under the New BSD License.
 
 using dnlib.DotNet;
+
 using Mosa.Compiler.Common.Exceptions;
+
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace Mosa.Compiler.MosaTypeSystem.Metadata
@@ -21,8 +24,8 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 		private readonly Dictionary<ScopedToken, MosaProperty> propertyLookup = new Dictionary<ScopedToken, MosaProperty>();
 
 		private uint stringIdCounter;
-		internal Dictionary<string, uint> stringHeapLookup = new Dictionary<string, uint>(StringComparer.Ordinal);
-		internal Dictionary<uint, string> stringHeapLookup2 = new Dictionary<uint, string>();
+		internal IDictionary<string, uint> stringHeapLookup = new ConcurrentDictionary<string, uint>(StringComparer.Ordinal);
+		internal IDictionary<uint, string> stringHeapLookup2 = new ConcurrentDictionary<uint, string>();
 
 		public MetadataCache()
 		{
@@ -31,7 +34,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 
 		public void AddModule(MosaModule module)
 		{
-			Modules.Add(module.Name, module);
+			Modules[module.Name] = module;
 
 			//var desc = module.GetUnderlyingObject<UnitDesc<ModuleDef, object>>();
 		}

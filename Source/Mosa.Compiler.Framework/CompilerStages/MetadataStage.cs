@@ -191,7 +191,7 @@ namespace Mosa.Compiler.Framework.CompilerStages
 			writer.WriteZeroBytes(TypeLayout.NativePointerSize);
 
 			// 9. Constructor that accepts no parameters, if any, for this type
-			foreach (var method in type.Methods)
+			foreach (var method in type.Methods.Values)
 			{
 				if (!method.IsConstructor || method.Signature.Parameters.Count != 0 || method.HasOpenGenericParams)
 					continue;
@@ -359,7 +359,7 @@ namespace Mosa.Compiler.Framework.CompilerStages
 
 			while (baseType != null)
 			{
-				foreach (var interfaceType in baseType.Interfaces)
+				foreach (var interfaceType in baseType.Interfaces.Values)
 				{
 					interfaces.AddIfNew(interfaceType);
 				}
@@ -412,7 +412,7 @@ namespace Mosa.Compiler.Framework.CompilerStages
 			writer1.Write((uint)type.Fields.Count, TypeLayout.NativePointerSize);
 
 			// 2. Pointers to Field Definitions
-			foreach (var field in type.Fields)
+			foreach (var field in type.Fields.Values)
 			{
 				// Emit field name
 				var fieldNameSymbol = EmitStringWithLength(Metadata.NameString + field.FullName, field.Name);
@@ -478,7 +478,7 @@ namespace Mosa.Compiler.Framework.CompilerStages
 			writer.Write((uint)type.Properties.Count, TypeLayout.NativePointerSize);
 
 			// 2. Pointers to Property Definitions
-			foreach (var property in type.Properties)
+			foreach (var property in type.Properties.Values)
 			{
 				// Emit field name
 				var fieldNameSymbol = EmitStringWithLength(Metadata.NameString + property.FullName, property.Name);

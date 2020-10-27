@@ -15,7 +15,7 @@ namespace Mosa.Compiler.Framework.CompilerStages
 		{
 			foreach (var type in TypeSystem.AllTypes)
 			{
-				foreach (var field in type.Fields)
+				foreach (var field in type.Fields.Values)
 				{
 					if (!field.IsStatic)
 						continue;

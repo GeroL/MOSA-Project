@@ -1,0 +1,6 @@
+<RuntimeGroup Include="mosa">
+      <!-- https://github.com/dotnet/runtime/blob/master/src/libraries/pkg/Microsoft.NETCore.Platforms/readme.md -->
+      <Parent>any</Parent>
+      <Architectures>x86;x64;arm</Architectures>
+      <Versions>0.1;0.2</Versions>
+</RuntimeGroup>

@@ -216,7 +216,7 @@ namespace Mosa.Compiler.Framework
 		public MethodCompiler(Compiler compiler, MosaMethod method, BasicBlocks basicBlocks, int threadID)
 		{
 			Stopwatch = Stopwatch.StartNew();
-
+			method.Resolve();
 			Compiler = compiler;
 			Method = method;
 			MethodScheduler = compiler.MethodScheduler;

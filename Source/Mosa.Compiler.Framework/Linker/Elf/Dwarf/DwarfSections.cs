@@ -214,7 +214,7 @@ namespace Mosa.Compiler.Framework.Linker.Elf.Dwarf
 				if (type.IsModule)
 					continue;
 
-				foreach (var method in type.Methods)
+				foreach (var method in type.Methods.Values)
 				{
 					if (method.Code == null)
 						continue;
@@ -308,7 +308,7 @@ namespace Mosa.Compiler.Framework.Linker.Elf.Dwarf
 				if (type.IsModule)
 					continue;
 
-				foreach (var method in type.Methods)
+				foreach (var method in type.Methods.Values)
 				{
 					if (!method.HasImplementation)
 						continue;

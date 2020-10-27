@@ -1,6 +1,7 @@
 ﻿// Copyright (c) MOSA Project. Licensed under the New BSD License.
 
 using Mosa.Compiler.MosaTypeSystem;
+
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -38,6 +39,12 @@ namespace Mosa.Compiler.Framework
 			var methodPointerOperand = methodCompiler.Parameters[2];
 
 			var methodPointerField = GetField(methodCompiler.Method.DeclaringType, "methodPointer");
+			if(methodPointerField is null)
+			{
+				Debug.WriteLine($"MethodPointer not found: Could not patch .ctor for method {methodCompiler.Method.FullName}");
+				return;
+			}
+
 			int methodPointerOffset = methodCompiler.TypeLayout.GetFieldOffset(methodPointerField);
 			var methodPointerOffsetOperand = methodCompiler.CreateConstant(methodPointerOffset);
 
@@ -193,11 +200,11 @@ namespace Mosa.Compiler.Framework
 
 		private static MosaField GetField(MosaType type, string name)
 		{
-			foreach (var field in type.Fields)
-			{
-				if (field.Name == name)
-					return field;
-			}
+			if (type is null)
+				return null;
+
+			if (type.Fields.TryGetValue(name, out var f))
+				return f;
 
 			return GetField(type.BaseType, name);
 		}

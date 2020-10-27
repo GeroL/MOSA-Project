@@ -2,7 +2,9 @@
 
 using Mosa.Compiler.Common.Exceptions;
 using Mosa.Compiler.MosaTypeSystem.Metadata;
+
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace Mosa.Compiler.MosaTypeSystem
@@ -35,9 +37,9 @@ namespace Mosa.Compiler.MosaTypeSystem
 			{
 				foreach (var module in Modules)
 				{
-					foreach (var type in module.Types.Values)
+					foreach (var type in module.Types)
 					{
-						yield return type;
+						yield return type.Value;
 					}
 				}
 			}
@@ -100,7 +102,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 				throw new AssemblyLoadException();
 		}
 
-		private readonly Dictionary<Tuple<MosaModule, string, string>, MosaType> typeLookup = new Dictionary<Tuple<MosaModule, string, string>, MosaType>();
+		private readonly IDictionary<Tuple<MosaModule, string, string>, MosaType> typeLookup = new ConcurrentDictionary<Tuple<MosaModule, string, string>, MosaType>();
 
 		public MosaType GetTypeByName(string @namespace, string name)
 		{
@@ -176,12 +178,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 				parameters = new List<MosaParameter>();
 
 			var result = Controller.CreateMethod();
-
-			using (var mosaType = Controller.MutateType(type))
-			{
-				mosaType.Methods.Add(result);
-			}
-
+			
 			using (var mosaMethod = Controller.MutateMethod(result))
 			{
 				mosaMethod.Module = LinkerModule;
@@ -192,9 +189,14 @@ namespace Mosa.Compiler.MosaTypeSystem
 				mosaMethod.HasThis = hasThis;
 				mosaMethod.HasExplicitThis = false;
 				mosaMethod.IsCompilerGenerated = true;
-
-				return result;
 			}
+
+			using (var mosaType = Controller.MutateType(type))
+			{
+				mosaType.Methods.Add(result.FullName, result);
+			}
+
+			return result;
 		}
 
 		/// <summary>
@@ -377,10 +379,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 			public void AddType(MosaType type)
 			{
-				if (!type.Module.Types.ContainsKey(type.ID))
-				{
-					type.Module.Types.Add(type.ID, type);
-				}
+				type.Module.Types[type.ID] = type;
 
 				typeSystem.typeLookup[Tuple.Create(type.Module, type.Namespace, type.ShortName)] = type;
 			}

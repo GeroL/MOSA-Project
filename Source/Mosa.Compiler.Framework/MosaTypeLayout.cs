@@ -2,6 +2,7 @@
 
 using Mosa.Compiler.Common;
 using Mosa.Compiler.MosaTypeSystem;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -305,7 +306,7 @@ namespace Mosa.Compiler.Framework
 				// Implicit Interface Methods
 				for (int slot = 0; slot < interfaceType.Methods.Count; slot++)
 				{
-					methodTable[slot] = FindInterfaceMethod(type, interfaceType.Methods[slot]);
+					methodTable[slot] = FindInterfaceMethod(type, interfaceType.Methods.ElementAt(slot).Value);
 				}
 
 				// Explicit Interface Methods
@@ -420,7 +421,7 @@ namespace Mosa.Compiler.Framework
 			{
 				if (type.Fields != null)
 				{
-					var nonStaticFields = type.Fields.Where(x => !x.IsStatic).ToList();
+					var nonStaticFields = type.Fields.Values.Where(x => !x.IsStatic).ToList();
 
 					if (nonStaticFields.Count != 1)
 						return null;
@@ -500,7 +501,7 @@ namespace Mosa.Compiler.Framework
 				return;
 			}
 
-			foreach (var interfaceType in type.Interfaces)
+			foreach (var interfaceType in type.Interfaces.Values)
 			{
 				ResolveInterfaceType(interfaceType);
 			}
@@ -617,7 +618,7 @@ namespace Mosa.Compiler.Framework
 				}
 			}
 
-			foreach (var field in type.Fields)
+			foreach (var field in type.Fields.Values)
 			{
 				if (!field.IsStatic)
 				{
@@ -650,7 +651,7 @@ namespace Mosa.Compiler.Framework
 			//Debug.Assert(type.BaseType.LayoutSize != 0, @"Type size not set for explicit layout.");
 
 			int size = 0;
-			foreach (var field in type.Fields)
+			foreach (var field in type.Fields.Values)
 			{
 				if (field.Offset == null)
 					continue;
@@ -699,7 +700,7 @@ namespace Mosa.Compiler.Framework
 
 		private void ScanExplicitInterfaceImplementations(MosaType type, MosaType interfaceType, MosaMethod[] methodTable)
 		{
-			foreach (var method in type.Methods)
+			foreach (var method in type.Methods.Values)
 			{
 				foreach (var overrideTarget in method.Overrides)
 				{
@@ -707,7 +708,7 @@ namespace Mosa.Compiler.Framework
 					var cleanOverrideTargetName = GetNonExplicitMethodName(overrideTarget);
 
 					int slot = 0;
-					foreach (var interfaceMethod in interfaceType.Methods)
+					foreach (var interfaceMethod in interfaceType.Methods.Values)
 					{
 						// Get clean name for interfaceMethod
 						var cleanInterfaceMethodName = GetNonExplicitMethodName(interfaceMethod);
@@ -734,7 +735,7 @@ namespace Mosa.Compiler.Framework
 
 			var cleanInterfaceMethodName = GetNonExplicitMethodName(interfaceMethod);
 
-			foreach (var method in type.Methods)
+			foreach (var method in type.Methods.Values)
 			{
 				if (method.HasOpenGenericParams)
 					continue;
@@ -770,7 +771,7 @@ namespace Mosa.Compiler.Framework
 
 			var cleanInterfaceMethodName = GetNonExplicitMethodName(interfaceMethod);
 
-			foreach (var method in type.Methods)
+			foreach (var method in type.Methods.Values)
 			{
 				if (method.HasOpenGenericParams)
 					continue;
@@ -830,7 +831,7 @@ namespace Mosa.Compiler.Framework
 
 			methodTable = GetMethodTableFromBaseType(type);
 
-			foreach (var method in type.Methods)
+			foreach (var method in type.Methods.Values)
 			{
 				if (method.IsVirtual)
 				{
@@ -838,7 +839,8 @@ namespace Mosa.Compiler.Framework
 					{
 						int slot = methodTable.Count;
 						methodTable.Add(method);
-						methodSlots.Add(method, slot);
+						//methodSlots.Add(method, slot);
+						methodSlots[method] = slot;
 					}
 					else
 					{
@@ -846,7 +848,8 @@ namespace Mosa.Compiler.Framework
 						if (slot != -1)
 						{
 							methodTable[slot] = method;
-							methodSlots.Add(method, slot);
+							//methodSlots.Add(method, slot);
+							methodSlots[method] = slot;
 							SetMethodOverridden(method, slot);
 						}
 						else
@@ -863,7 +866,8 @@ namespace Mosa.Compiler.Framework
 					{
 						int slot = methodTable.Count;
 						methodTable.Add(method);
-						methodSlots.Add(method, slot);
+						methodSlots[method] = slot;
+						//methodSlots.Add(method, slot);
 					}
 					else if (!method.IsInternal && !method.IsExternal)
 					{

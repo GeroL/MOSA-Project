@@ -100,7 +100,7 @@ namespace Mosa.Compiler.Framework
 			if (!IsCompilable(type))
 				return;
 
-			foreach (var method in type.Methods)
+			foreach (var method in type.Methods.Values)
 			{
 				Schedule(method);
 			}

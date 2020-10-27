@@ -1,7 +1,10 @@
 ﻿// Copyright (c) MOSA Project. Licensed under the New BSD License.
 
+using Mosa.Compiler.Common.Exceptions;
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Mosa.Compiler.MosaTypeSystem
@@ -74,6 +77,8 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 		public bool IsTypeConstructor { get { return IsSpecialName && IsRTSpecialName && IsStatic && Name == ".cctor"; } }
 
+		public Action Resolve { get; internal set; }
+
 		internal MosaMethod()
 		{
 			GenericArguments = (genericArguments = new List<MosaType>()).AsReadOnly();
@@ -88,16 +93,23 @@ namespace Mosa.Compiler.MosaTypeSystem
 		internal MosaMethod Clone()
 		{
 			var result = (MosaMethod)base.MemberwiseClone();
+			try
+			{
+				result.GenericArguments = (result.genericArguments = new List<MosaType>(genericArguments)).AsReadOnly();
 
-			result.GenericArguments = (result.genericArguments = new List<MosaType>(genericArguments)).AsReadOnly();
+				result.LocalVariables = (result.localVars = new List<MosaLocal>(localVars)).AsReadOnly();
+				result.Code = (result.instructions = instructions.ToList()).AsReadOnly();
+				result.ExceptionHandlers = (result.exceptionHandlers = new List<MosaExceptionHandler>(exceptionHandlers)).AsReadOnly();
 
-			result.LocalVariables = (result.localVars = new List<MosaLocal>(localVars)).AsReadOnly();
-			result.Code = (result.instructions = new List<MosaInstruction>(instructions)).AsReadOnly();
-			result.ExceptionHandlers = (result.exceptionHandlers = new List<MosaExceptionHandler>(exceptionHandlers)).AsReadOnly();
+				result.Overrides = (result.overrides = new List<MosaMethod>(overrides)).AsReadOnly();
 
-			result.Overrides = (result.overrides = new List<MosaMethod>(overrides)).AsReadOnly();
-
-			return result;
+				return result;
+			}
+			catch (Exception)
+			{
+				throw new AssemblyLoadException();
+			}
+		
 		}
 
 		public bool Equals(MosaMethod other)
@@ -116,6 +128,8 @@ namespace Mosa.Compiler.MosaTypeSystem
 			{
 				this.method = method;
 			}
+
+			
 
 			public MosaModule Module { set { method.Module = value; } }
 

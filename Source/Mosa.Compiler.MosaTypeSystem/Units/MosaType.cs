@@ -1,8 +1,12 @@
 ﻿// Copyright (c) MOSA Project. Licensed under the New BSD License.
 
 using Mosa.Compiler.Common;
+
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace Mosa.Compiler.MosaTypeSystem
@@ -33,18 +37,13 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 		public int? PackingSize { get; private set; }
 
-		private List<MosaMethod> methods;
-		private List<MosaField> fields;
-		private List<MosaProperty> properties;
-		private List<MosaType> interfaces;
+		public IDictionary<string, MosaMethod> Methods { get; private set; }
 
-		public IList<MosaMethod> Methods { get; private set; }
+		public IDictionary<string, MosaProperty> Properties { get; private set; }
 
-		public IList<MosaProperty> Properties { get; private set; }
+		public IDictionary<string, MosaField> Fields { get; private set; }
 
-		public IList<MosaField> Fields { get; private set; }
-
-		public IList<MosaType> Interfaces { get; private set; }
+		public IDictionary<string, MosaType> Interfaces { get; private set; }
 
 		public MosaTypeAttributes TypeAttributes { get; private set; }
 
@@ -167,10 +166,10 @@ namespace Mosa.Compiler.MosaTypeSystem
 		{
 			Namespace = "";
 
-			Methods = (methods = new List<MosaMethod>()).AsReadOnly();
-			Fields = (fields = new List<MosaField>()).AsReadOnly();
-			Properties = (properties = new List<MosaProperty>()).AsReadOnly();
-			Interfaces = (interfaces = new List<MosaType>()).AsReadOnly();
+			Methods = new ConcurrentDictionary<string, MosaMethod>();
+			Fields = new ConcurrentDictionary<string, MosaField>();
+			Properties = new ConcurrentDictionary<string, MosaProperty>();
+			Interfaces = new ConcurrentDictionary<string, MosaType>();
 
 			GenericArguments = (genericArguments = new List<MosaType>()).AsReadOnly();
 		}
@@ -179,11 +178,10 @@ namespace Mosa.Compiler.MosaTypeSystem
 		{
 			var result = (MosaType)base.MemberwiseClone();
 
-			result.Methods = (result.methods = new List<MosaMethod>(methods)).AsReadOnly();
-			result.Fields = (result.fields = new List<MosaField>(fields)).AsReadOnly();
-			result.Properties = (result.properties = new List<MosaProperty>(properties)).AsReadOnly();
-			result.Interfaces = (result.interfaces = new List<MosaType>(interfaces)).AsReadOnly();
-
+			result.Methods = new ConcurrentDictionary<string, MosaMethod>(Methods);
+			result.Fields = new ConcurrentDictionary<string, MosaField>(Fields);
+			result.Properties = new ConcurrentDictionary<string, MosaProperty>(Properties);
+			result.Interfaces = new ConcurrentDictionary<string, MosaType>(Interfaces);
 			result.GenericArguments = (result.genericArguments = new List<MosaType>(genericArguments)).AsReadOnly();
 
 			return result;
@@ -196,30 +194,20 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 		public MosaMethod FindMethodByName(string name)
 		{
-			foreach (var method in Methods)
-			{
-				if (method.Name == name)
-					return method;
-			}
-			return null;
+			return Methods.FirstOrDefault(x => x.Value.Name == name).Value;
 		}
 
 		public MosaMethod FindMethodByNameAndParameters(string name, IList<MosaParameter> parameters)
 		{
-			foreach (var method in Methods)
-			{
-				if (method.Name == name && method.Signature.Parameters.SequenceEquals(parameters))
-					return method;
-			}
-			return null;
+			return Methods.FirstOrDefault(x => x.Value.Name == name && x.Value.Signature.Parameters.SequenceEquals(parameters)).Value;
 		}
 
 		public MosaMethod FindMethodBySignature(string name, MosaMethodSignature sig)
 		{
 			foreach (var method in Methods)
 			{
-				if (method.Name == name && method.Signature.Equals(sig))
-					return method;
+				if (method.Value.Name == name && method.Value.Signature.Equals(sig))
+					return method.Value;
 			}
 			return null;
 		}
@@ -256,13 +244,13 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 			public int? PackingSize { set { type.PackingSize = value; } }
 
-			public IList<MosaMethod> Methods { get { return type.methods; } }
+			public IDictionary<string, MosaMethod> Methods { get { return type.Methods; } }
 
-			public IList<MosaField> Fields { get { return type.fields; } }
+			public IDictionary<string, MosaField> Fields { get { return type.Fields; } }
 
-			public IList<MosaProperty> Properties { get { return type.properties; } }
+			public IDictionary<string, MosaProperty> Properties { get { return type.Properties; } }
 
-			public IList<MosaType> Interfaces { get { return type.interfaces; } }
+			public IDictionary<string, MosaType> Interfaces { get { return type.Interfaces; } }
 
 			public MosaTypeAttributes TypeAttributes { set { type.TypeAttributes = value; } }
 

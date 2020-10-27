@@ -125,7 +125,7 @@ namespace Mosa.Compiler.Framework.CompilerStages
 				if (type.IsModule)
 					continue;
 
-				foreach (var method in type.Methods)
+				foreach (var method in type.Methods.Values)
 				{
 					if (!Linker.IsSymbolDefined(method.FullName))
 						continue;
@@ -160,7 +160,7 @@ namespace Mosa.Compiler.Framework.CompilerStages
 				if (type.IsModule)
 					continue;
 
-				foreach (var method in type.Methods)
+				foreach (var method in type.Methods.Values)
 				{
 					int index = 0;
 
@@ -198,7 +198,7 @@ namespace Mosa.Compiler.Framework.CompilerStages
 
 				int index = 0;
 
-				foreach (var field in type.Fields)
+				foreach (var field in type.Fields.Values)
 				{
 					var symbolName = Metadata.FieldDefinition + field.FullName;
 
@@ -275,7 +275,7 @@ namespace Mosa.Compiler.Framework.CompilerStages
 				if (type.IsModule)
 					continue;
 
-				foreach (var method in type.Methods)
+				foreach (var method in type.Methods.Values)
 				{
 					if (method.Code == null)
 						continue;
@@ -327,7 +327,7 @@ namespace Mosa.Compiler.Framework.CompilerStages
 				if (type.IsModule)
 					continue;
 
-				foreach (var method in type.Methods)
+				foreach (var method in type.Methods.Values)
 				{
 					if (method.Code == null)
 						continue;

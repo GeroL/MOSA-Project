@@ -1,5 +1,6 @@
 ﻿// Copyright (c) MOSA Project. Licensed under the New BSD License.
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace Mosa.Compiler.MosaTypeSystem
@@ -16,7 +17,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 		internal MosaModule()
 		{
-			Types = new Dictionary<uint, MosaType>();
+			Types = new ConcurrentDictionary<uint, MosaType>();
 		}
 
 		public class Mutator : MosaUnit.MutatorBase

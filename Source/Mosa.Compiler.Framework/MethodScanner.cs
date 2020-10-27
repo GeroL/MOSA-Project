@@ -70,7 +70,7 @@ namespace Mosa.Compiler.Framework
 
 				totalTypes++;
 
-				foreach (var method in type.Methods)
+				foreach (var method in type.Methods.Values)
 				{
 					if ((!(!method.HasImplementation && method.IsAbstract)) && !method.HasOpenGenericParams && !method.DeclaringType.HasOpenGenericParams)
 					{
@@ -148,7 +148,7 @@ namespace Mosa.Compiler.Framework
 				return;
 
 			// find all interfaces methods for this type
-			foreach (var interfaceType in type.Interfaces)
+			foreach (var interfaceType in type.Interfaces.Values)
 			{
 				if (!invokedInteraceTypes.Contains(interfaceType))
 					continue;
@@ -219,7 +219,7 @@ namespace Mosa.Compiler.Framework
 					if (type.IsInterface)
 						continue;
 
-					if (!type.Interfaces.Contains(interfaceType))
+					if (!type.Interfaces.ContainsKey(interfaceType.Name))
 						continue;
 
 					lock (allocatedTypes)
@@ -323,7 +323,7 @@ namespace Mosa.Compiler.Framework
 
 			while (currentType != null)
 			{
-				foreach (var method in currentType.Methods)
+				foreach (var method in currentType.Methods.Values)
 				{
 					bool contains;
 
@@ -400,7 +400,7 @@ namespace Mosa.Compiler.Framework
 			{
 				bool allocateType = false;
 
-				foreach (var method in type.Methods)
+				foreach (var method in type.Methods.Values)
 				{
 					if (!method.IsStatic)
 						continue;
@@ -473,7 +473,7 @@ namespace Mosa.Compiler.Framework
 					trace?.Log($"Type Excluded: {type.FullName}");
 				}
 
-				foreach (var method in type.Methods)
+				foreach (var method in type.Methods.Values)
 				{
 					if (!IsMethodInvoked(method))
 					{

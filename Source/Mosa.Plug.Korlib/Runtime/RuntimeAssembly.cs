@@ -87,7 +87,7 @@ namespace Mosa.Plug.Korlib.Runtime
 
 		internal RuntimeAssembly(IntPtr pointer)
 		{
-			assemblyDefinition = new AssemblyDefinition(new Pointer(pointer));
+			assemblyDefinition = new AssemblyDefinition(new Mosa.Runtime.Pointer(pointer));
 			fullName = assemblyDefinition.Name;
 
 			typeList = new List<RuntimeType>();

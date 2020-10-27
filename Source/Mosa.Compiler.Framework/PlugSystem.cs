@@ -30,7 +30,7 @@ namespace Mosa.Compiler.Framework
 			// Collect all plug methods
 			foreach (var type in TypeSystem.AllTypes)
 			{
-				foreach (var method in type.Methods)
+				foreach (var method in type.Methods.Values)
 				{
 					if (!method.IsStatic)
 						continue;

@@ -98,7 +98,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 
 		public static TypeSig GetTypeSig(this MosaType type)
 		{
-			return type.GetUnderlyingObject<UnitDesc<TypeDef, TypeSig>>().Signature;
+			return type.GetUnderlyingObject<UnitDesc<TypeDef, TypeSig>>()?.Signature;
 		}
 
 		public static MethodSig GetMethodSig(this MosaMethod method)

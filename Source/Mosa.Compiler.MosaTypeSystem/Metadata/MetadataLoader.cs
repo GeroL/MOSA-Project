@@ -1,8 +1,11 @@
 ﻿// Copyright (c) MOSA Project. Licensed under the New BSD License.
 
 using dnlib.DotNet;
+
 using Mosa.Compiler.Common.Exceptions;
+
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -23,7 +26,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			}
 		}
 
-		private readonly Dictionary<TypeSig, MosaType> typeCache = new Dictionary<TypeSig, MosaType>(new TypeSigComparer());
+		private readonly IDictionary<TypeSig, MosaType> typeCache = new ConcurrentDictionary<TypeSig, MosaType>(new TypeSigComparer());
 		private readonly MosaType[] mvar = new MosaType[0x100];
 		private readonly MosaType[] var = new MosaType[0x100];
 		private ClassOrValueTypeSig szHelperEnumeratorSig = null;
@@ -33,6 +36,8 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 		public IList<MosaUnit> LoadedUnits { get; }
 
 		public MosaModule CorLib { get; private set; }
+
+		public MosaModule RuntimeLib { get; private set; }
 
 		private readonly CLRMetadata metadata;
 
@@ -44,6 +49,11 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 
 		public MosaModule Load(ModuleDef moduleDef)
 		{
+
+			var alreadyLoaded = LoadedUnits.OfType<MosaModule>().FirstOrDefault(x => x.FullName == moduleDef.FullName);
+			if (alreadyLoaded != null)
+				return alreadyLoaded;
+
 			var mosaModule = metadata.Controller.CreateModule();
 
 			using (var module = metadata.Controller.MutateModule(mosaModule))
@@ -62,7 +72,10 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			LoadedUnits.Add(mosaModule);
 
 			if (moduleDef.Assembly.IsCorLib())
-				CorLib = mosaModule;
+			{
+				var result = moduleDef.CorLibTypes.GetTypeRef("System", "Void").Resolve();
+				CorLib = Load(result.Module);
+			}
 
 			return mosaModule;
 		}
@@ -114,7 +127,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 						LoadField(mosaType, field, fieldDef);
 					}
 
-					type.Fields.Add(mosaField);
+					type.Fields.Add(mosaField.Name, mosaField);
 					metadata.Cache.AddField(mosaField);
 					LoadedUnits.Add(mosaField);
 				}
@@ -128,7 +141,10 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 						LoadMethod(mosaType, method, methodDef);
 					}
 
-					type.Methods.Add(mosaMethod);
+					if (string.IsNullOrWhiteSpace(mosaMethod.FullName))
+						mosaMethod.FullName = methodDef.ToString();
+
+					type.Methods.Add($"{mosaMethod.FullName}", mosaMethod);
 					metadata.Cache.AddMethod(mosaMethod);
 					LoadedUnits.Add(mosaMethod);
 				}
@@ -142,7 +158,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 						LoadProperty(mosaType, property, propertyDef);
 					}
 
-					type.Properties.Add(mosaProperty);
+					type.Properties.Add(mosaProperty.Name, mosaProperty);
 					metadata.Cache.AddProperty(mosaProperty);
 					LoadedUnits.Add(mosaProperty);
 				}
@@ -156,7 +172,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			{
 				szHelperMethods = mosaType
 					.Methods
-					.Select(x => x.GetUnderlyingObject<UnitDesc<MethodDef, MethodSig>>())
+					.Select(x => x.Value.GetUnderlyingObject<UnitDesc<MethodDef, MethodSig>>())
 					.ToArray();
 			}
 		}
@@ -398,10 +414,9 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 
 				var resolver = new GenericArgumentResolver();
 				resolver.PushTypeGenericArguments(typeSig.GenericArguments);
-
-				for (int i = 0; i < result.Methods.Count; i++)
+				foreach (var m in result.Methods)
 				{
-					var method = metadata.Controller.CreateMethod(result.Methods[i]);
+					var method = metadata.Controller.CreateMethod(m.Value);
 
 					using (var mosaMethod = metadata.Controller.MutateMethod(method))
 					{
@@ -409,13 +424,12 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 						mosaMethod.UnderlyingObject = method.GetUnderlyingObject<UnitDesc<MethodDef, MethodSig>>();
 					}
 
-					resultType.Methods[i] = method;
+					resultType.Methods[$"{method.FullName}"] = method;
 					metadata.Resolver.EnqueueForResolve(method);
 				}
-
-				for (int i = 0; i < result.Fields.Count; i++)
+				foreach (var f in result.Fields)
 				{
-					var field = metadata.Controller.CreateField(result.Fields[i]);
+					var field = metadata.Controller.CreateField(f.Value);
 
 					using (var mosaField = metadata.Controller.MutateField(field))
 					{
@@ -423,13 +437,12 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 						mosaField.UnderlyingObject = field.GetUnderlyingObject<UnitDesc<FieldDef, FieldSig>>();
 					}
 
-					resultType.Fields[i] = field;
+					resultType.Fields[field.Name] = field;
 					metadata.Resolver.EnqueueForResolve(field);
 				}
-
-				for (int i = 0; i < result.Properties.Count; i++)
+				foreach (var p in result.Properties)
 				{
-					var property = metadata.Controller.CreateProperty(result.Properties[i]);
+					var property = metadata.Controller.CreateProperty(p.Value);
 
 					var newSig = property.GetPropertySig().Clone();
 					newSig.RetType = resolver.Resolve(newSig.RetType);
@@ -439,7 +452,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 						mosaProperty.UnderlyingObject = property.GetUnderlyingObject<UnitDesc<PropertyDef, PropertySig>>();
 					}
 
-					resultType.Properties[i] = property;
+					resultType.Properties[property.Name] = property;
 					metadata.Resolver.EnqueueForResolve(property);
 				}
 
@@ -470,10 +483,10 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			UnitDesc<MethodDef, MethodSig> desc = null;
 			foreach (var m in declType.Methods)
 			{
-				desc = m.GetUnderlyingObject<UnitDesc<MethodDef, MethodSig>>();
+				desc = m.Value.GetUnderlyingObject<UnitDesc<MethodDef, MethodSig>>();
 				if (desc.Token.Token == token)
 				{
-					mosaMethod = m;
+					mosaMethod = m.Value;
 					break;
 				}
 			}
@@ -496,8 +509,9 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			resolver.PopMethodGenericArguments();
 
 			var comparer = new SigComparer();
-			foreach (var m in declType.Methods)
+			foreach (var m2 in declType.Methods)
 			{
+				var m = m2.Value;
 				var mDesc = m.GetUnderlyingObject<UnitDesc<MethodDef, MethodSig>>();
 				if (mDesc.Definition != desc.Definition || !comparer.Equals(mDesc.Signature, newSig))
 					continue;
@@ -545,7 +559,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			}
 
 			using (var decl = metadata.Controller.MutateType(declType))
-				decl.Methods.Add(mosaMethod);
+				decl.Methods[mosaMethod.FullName] = mosaMethod;
 
 			metadata.Resolver.EnqueueForResolve(mosaMethod);
 

@@ -318,7 +318,7 @@ namespace Mosa.Tool.Explorer
 						typeSelected = type;
 				}
 
-				foreach (var method in type.Methods)
+				foreach (var method in type.Methods.Values)
 				{
 					bool methodMatch = method.FullName.Contains(value);
 
@@ -333,7 +333,7 @@ namespace Mosa.Tool.Explorer
 					}
 				}
 
-				foreach (var property in type.Properties)
+				foreach (var property in type.Properties.Values)
 				{
 					if (typeIncluded || property.FullName.Contains(value))
 					{

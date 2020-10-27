@@ -136,7 +136,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 				method.Signature = new MosaMethodSignature(arrayType.ElementType, parameters);
 			}
 
-			type.Methods.Add(methodGet);
+			type.Methods.Add(methodGet.Name, methodGet);
 
 			var methodSet = typeSystem.Controller.CreateMethod();
 
@@ -176,7 +176,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 				method.Signature = new MosaMethodSignature(typeSystem.BuiltIn.Void, parameters);
 			}
 
-			type.Methods.Add(methodSet);
+			type.Methods.Add(methodSet.Name, methodSet);
 
 			var methodAdrOf = typeSystem.Controller.CreateMethod();
 
@@ -204,7 +204,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 				}
 				method.Signature = new MosaMethodSignature(arrayType.ElementType.ToManagedPointer(), parameters);
 			}
-			type.Methods.Add(methodAdrOf);
+			type.Methods.Add(methodAdrOf.Name, methodAdrOf);
 
 			var methodCtor = typeSystem.Controller.CreateMethod();
 
@@ -232,7 +232,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 				}
 				method.Signature = new MosaMethodSignature(typeSystem.BuiltIn.Void, parameters);
 			}
-			type.Methods.Add(methodCtor);
+			type.Methods.Add(methodCtor.Name, methodCtor);
 		}
 
 		public static MosaType ToFnPtr(this TypeSystem typeSystem, MosaMethodSignature signature)
@@ -278,8 +278,8 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 			foreach (var field in type.Fields)
 			{
-				if (!field.IsStatic)
-					return field.FieldType;
+				if (!field.Value.IsStatic)
+					return field.Value.FieldType;
 			}
 
 			return null;

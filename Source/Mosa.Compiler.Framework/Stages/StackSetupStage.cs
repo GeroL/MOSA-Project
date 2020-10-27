@@ -10,6 +10,8 @@ namespace Mosa.Compiler.Framework.Stages
 	{
 		protected override void Run()
 		{
+			
+
 			if (!MethodCompiler.IsStackFrameRequired)
 				return;
 

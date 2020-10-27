@@ -87,7 +87,7 @@ namespace Mosa.Compiler.Framework.CompilerStages
 
 			foreach (var type in TypeSystem.AllTypes)
 			{
-				foreach (var method in type.Methods)
+				foreach (var method in type.Methods.Values)
 				{
 					if (method.IsTypeConstructor && !method.HasOpenGenericParams)
 					{

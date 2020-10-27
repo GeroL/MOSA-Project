@@ -8,6 +8,7 @@ using Mosa.Compiler.MosaTypeSystem;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 
 namespace Mosa.Compiler.Framework.Stages
@@ -325,14 +326,14 @@ namespace Mosa.Compiler.Framework.Stages
 			if (node.Operand1.IsEnum)
 			{
 				var type = node.Operand1.Type;
-				var operand = Operand.CreateStaticField(type.Fields[0], TypeSystem);
+				var operand = Operand.CreateStaticField(type.Fields.First().Value, TypeSystem);
 				node.SetOperand(0, operand);
 			}
 
 			if (node.Operand2.IsEnum)
 			{
 				var type = node.Operand2.Type;
-				var operand = Operand.CreateStaticField(type.Fields[0], TypeSystem);
+				var operand = Operand.CreateStaticField(type.Fields.First().Value, TypeSystem);
 				node.SetOperand(1, operand);
 			}
 
@@ -491,8 +492,8 @@ namespace Mosa.Compiler.Framework.Stages
 				if (type.IsValueType)
 				{
 					method = GetMethodOrOverride(type, method);
-
-					if (type.Methods.Contains(method))
+					
+					if (type.Methods.ContainsKey(method.Name))
 					{
 						// If the method being called is a virtual method then we need to box the value type
 						if (method.IsVirtual
@@ -676,7 +677,7 @@ namespace Mosa.Compiler.Framework.Stages
 		{
 			MosaMethod implMethod = null;
 
-			if (type.Methods.Contains(method)
+			if (type.Methods.ContainsKey(method.Name)
 				&& (implMethod = type.FindMethodBySignature(method.Name, method.Signature)) != null)
 			{
 				return implMethod;
