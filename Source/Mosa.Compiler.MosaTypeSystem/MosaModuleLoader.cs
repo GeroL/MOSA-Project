@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace Mosa.Compiler.MosaTypeSystem
 {
@@ -51,13 +52,9 @@ namespace Mosa.Compiler.MosaTypeSystem
 						LoadDependencies(subModule);
 				}
 
-				//Insert here custom runtime path:
-				//var mosaSdk = @"C:\Program Files\dotnet\shared\Mosa.NETCore.App\5.0.0-rc.2.20475.5";
-
 				//TODO: Let user choose a runtime version from the launcher
-				var dotnetDir = new DirectoryInfo(@"C:\Program Files\dotnet\shared\Microsoft.NETCore.App\");
-				var sdkDir = dotnetDir.EnumerateDirectories().OrderBy(x => x.Name).Last();
-				subModuleFile = Path.Combine(sdkDir.FullName, assemblyRef.Name + ".dll");
+				var sdkDir = RuntimeEnvironment.GetRuntimeDirectory();
+				subModuleFile = Path.Combine(sdkDir, assemblyRef.Name + ".dll");
 				if (File.Exists(subModuleFile))
 				{
 					var subModule = ModuleDefMD.Load(subModuleFile, Resolver.DefaultModuleContext);

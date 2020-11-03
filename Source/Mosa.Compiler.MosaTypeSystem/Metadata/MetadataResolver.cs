@@ -104,61 +104,73 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 				}
 		}
 
-		public void Resolve()
+		public void PatchConnections()
 		{
-			foreach (var unit in metadata.Loader.LoadedUnits)
+			//foreach (var type in metadata.Loader.LoadedUnits.OfType<MosaType>())
+			foreach (var type in metadata.TypeSystem.AllTypes)
 			{
-				if (unit is MosaType type)
+				var typeDef = type.GetUnderlyingObject<UnitDesc<TypeDef, TypeSig>>()?.Definition;
+				if (typeDef is null)
+					continue;
+
+				using (var mosaType = metadata.Controller.MutateType(type))
 				{
-					using (var mosaType = metadata.Controller.MutateType(type))
+					if (typeDef.BaseType != null)
 					{
-						var typeDef = type.GetUnderlyingObject<UnitDesc<TypeDef, TypeSig>>().Definition;
-
-						if (typeDef.BaseType != null)
-						{
-							mosaType.BaseType = metadata.Loader.GetType(typeDef.BaseType.ToTypeSig());
-						}
-
-						if (typeDef.DeclaringType != null)
-						{
-							mosaType.DeclaringType = metadata.Loader.GetType(typeDef.DeclaringType.ToTypeSig());
-						}
-
-						if (typeDef.IsEnum)
-						{
-							mosaType.ElementType = metadata.Loader.GetType(typeDef.GetEnumUnderlyingType());
-						}
-
-						foreach (var iface in typeDef.Interfaces)
-						{
-							var t = metadata.Loader.GetType(iface.Interface.ToTypeSig());
-							mosaType.Interfaces.Add(t.Name, t);
-						}
-
-						if (typeDef.BaseType != null)
-						{
-							ResolveInterfacesInBaseTypes(mosaType, type.BaseType);
-						}
+						mosaType.BaseType = metadata.Loader.GetType(typeDef.BaseType.ToTypeSig());
 					}
-					ResolveType(type);
-				}
-				else if (unit is MosaField || unit is MosaMethod || unit is MosaModule || unit is MosaProperty)
-				{
-					EnqueueForResolve(unit);
+
+					if (typeDef.DeclaringType != null)
+					{
+						mosaType.DeclaringType = metadata.Loader.GetType(typeDef.DeclaringType.ToTypeSig());
+					}
+
+					if (typeDef.IsEnum)
+					{
+						mosaType.ElementType = metadata.Loader.GetType(typeDef.GetEnumUnderlyingType());
+					}
+
+					if (typeDef.BaseType != null)
+					{
+						ResolveInterfacesInBaseTypes(mosaType, type.BaseType);
+					}
+
+					foreach (var iface in typeDef.Interfaces)
+					{
+						var t = metadata.Loader.GetType(iface.Interface.ToTypeSig());
+
+						mosaType.Interfaces[t.Name] = t;
+					}
 				}
 			}
 
+			foreach (var type in metadata.TypeSystem.AllTypes)
+			{
+				var typeDef = type.GetUnderlyingObject<UnitDesc<TypeDef, TypeSig>>()?.Definition;
+				if (typeDef is null || typeDef.Interfaces.Count == type.Interfaces.Count)
+					continue;
+
+				using (var mosaType = metadata.Controller.MutateType(type))
+				{
+					foreach (var iface in typeDef.Interfaces)
+					{
+						var sig = iface.Interface.ToTypeSig();
+						var t = metadata.Loader.GetType(sig);
+						//var r = metadata.TypeSystem.GetTypeByName(sig.TypeName);
+						mosaType.Interfaces[t.Name] = t;
+					}
+				}
+			}
+		}
+
+		public void Resolve()
+		{
+			//Setup resolving queue 
+			foreach (var unit in metadata.Loader.LoadedUnits)
+				EnqueueForResolve(unit);
+
 			var t1 = new Thread(new ThreadStart(ResolveThread));
 			t1.Start();
-
-			//var t2 = new Thread(new ThreadStart(ResolveThread));
-			//t2.Start();
-
-			//var t3 = new Thread(new ThreadStart(ResolveThread));
-			//t3.Start();
-
-			//var t4 = new Thread(new ThreadStart(ResolveThread));
-			//t4.Start();
 
 			while (count > 0)
 			{
@@ -187,13 +199,19 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 				var type = arrayResolveQueue.Dequeue();
 				ResolveSZArray(type);
 			}
+
+			PatchConnections();
+
+			var tmp = metadata.TypeSystem.AllTypes.Where(x => x.IsInterface
+			&& x.GetUnderlyingObject<UnitDesc<TypeDef, TypeSig>>().Definition.Interfaces.Count > x.Interfaces.Count)
+			 .ToList();
 		}
 
 		private void ResolveInterfacesInBaseTypes(MosaType.Mutator mosaType, MosaType baseType)
 		{
 			foreach (var iface in baseType.Interfaces)
 			{
-				if (mosaType.Interfaces.Contains(iface))
+				if (mosaType.Interfaces.ContainsKey(iface.Key))
 					continue;
 
 				mosaType.Interfaces.Add(iface);
@@ -228,7 +246,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			return new MosaCustomAttribute.Argument(metadata.Loader.GetType(arg.Type), value);
 		}
 
-	
+
 		private void ResolveType(MosaType type)
 		{
 			var resolver = new GenericArgumentResolver();

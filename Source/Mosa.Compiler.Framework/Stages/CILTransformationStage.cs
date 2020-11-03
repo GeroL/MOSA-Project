@@ -1488,7 +1488,7 @@ namespace Mosa.Compiler.Framework.Stages
 
 			if (!MosaTypeLayout.CanFitInRegister(type))
 			{
-				Debug.Assert(!node.Result.IsVirtualRegister);
+				//Debug.Assert(!node.Result.IsVirtualRegister);
 
 				node.SetInstruction(IRInstruction.MoveCompound, node.Result, node.Operand1);
 			}

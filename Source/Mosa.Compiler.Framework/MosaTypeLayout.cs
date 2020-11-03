@@ -3,6 +3,8 @@
 using Mosa.Compiler.Common;
 using Mosa.Compiler.MosaTypeSystem;
 
+using Priority_Queue;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -833,54 +835,29 @@ namespace Mosa.Compiler.Framework
 
 			foreach (var method in type.Methods.Values)
 			{
-				if (method.IsVirtual)
+				int slot = methodTable.Count;
+				if (method.IsVirtual && !method.IsNewSlot)
 				{
-					if (method.IsNewSlot)
+					var newSlot = FindOverrideSlot(methodTable, method);
+					if (newSlot != -1)
 					{
-						int slot = methodTable.Count;
-						methodTable.Add(method);
-						//methodSlots.Add(method, slot);
-						methodSlots[method] = slot;
-					}
-					else
-					{
-						int slot = FindOverrideSlot(methodTable, method);
-						if (slot != -1)
-						{
-							methodTable[slot] = method;
-							//methodSlots.Add(method, slot);
-							methodSlots[method] = slot;
-							SetMethodOverridden(method, slot);
-						}
-						else
-						{
-							slot = methodTable.Count;
-							methodTable.Add(method);
-							methodSlots.Add(method, slot);
-						}
+						SetMethodOverridden(method, newSlot);
+						slot = newSlot;
 					}
 				}
+				else if (!method.IsInternal && !method.IsExternal)
+				{
+					// HACK
+					if (methodSlots.ContainsKey(method))
+						continue;
+				}
+
+				if (methodTable.Count > slot)
+					methodTable[slot] = method;
 				else
-				{
-					if (method.IsStatic && method.IsRTSpecialName)
-					{
-						int slot = methodTable.Count;
-						methodTable.Add(method);
-						methodSlots[method] = slot;
-						//methodSlots.Add(method, slot);
-					}
-					else if (!method.IsInternal && !method.IsExternal)
-					{
-						// HACK
-						if (methodSlots.ContainsKey(method))
-							continue;
+					methodTable.Add(method);
 
-						int slot = methodTable.Count;
-						methodTable.Add(method);
-
-						methodSlots.Add(method, slot);
-					}
-				}
+				methodSlots[method] = slot;
 			}
 
 			typeMethodTables.Add(type, methodTable);
@@ -970,44 +947,37 @@ namespace Mosa.Compiler.Framework
 
 		private static bool FitsInRegister(MosaType type)
 		{
-			if (type == null)
-				return false;
-
-			var typeCode = type.TypeCode;
-
-			if (typeCode == MosaTypeCode.ValueType)
-				return false; // no search
-
-			switch (typeCode)
+			return type?.TypeCode switch
 			{
-				case MosaTypeCode.Void: return true;
-				case MosaTypeCode.MVar: return true;
-				case MosaTypeCode.Boolean: return true;
-				case MosaTypeCode.Char: return true;
-				case MosaTypeCode.I1: return true;
-				case MosaTypeCode.U1: return true;
-				case MosaTypeCode.I2: return true;
-				case MosaTypeCode.U2: return true;
-				case MosaTypeCode.I4: return true;
-				case MosaTypeCode.U4: return true;
-				case MosaTypeCode.I8: return true;
-				case MosaTypeCode.U8: return true;
-				case MosaTypeCode.R4: return true;
-				case MosaTypeCode.R8: return true;
-				case MosaTypeCode.String: return true;
-				case MosaTypeCode.UnmanagedPointer: return true;
-				case MosaTypeCode.ManagedPointer: return true;
-				case MosaTypeCode.ReferenceType: return true;
-				case MosaTypeCode.Array: return true;
-				case MosaTypeCode.TypedRef: return true;
-				case MosaTypeCode.I: return true;
-				case MosaTypeCode.U: return true;
-				case MosaTypeCode.FunctionPointer: return true;
-				case MosaTypeCode.Object: return true;
-				case MosaTypeCode.SZArray: return true;
-				case MosaTypeCode.Var: return false;
-				default: return false;
-			}
+				MosaTypeCode.Void => true,
+				MosaTypeCode.MVar => true,
+				MosaTypeCode.Boolean => true,
+				MosaTypeCode.Char => true,
+				MosaTypeCode.I1 => true,
+				MosaTypeCode.U1 => true,
+				MosaTypeCode.I2 => true,
+				MosaTypeCode.U2 => true,
+				MosaTypeCode.I4 => true,
+				MosaTypeCode.U4 => true,
+				MosaTypeCode.I8 => true,
+				MosaTypeCode.U8 => true,
+				MosaTypeCode.R4 => true,
+				MosaTypeCode.R8 => true,
+				MosaTypeCode.String => true,
+				MosaTypeCode.UnmanagedPointer => true,
+				MosaTypeCode.ManagedPointer => true,
+				MosaTypeCode.ReferenceType => true,
+				MosaTypeCode.Array => true,
+				MosaTypeCode.TypedRef => true,
+				MosaTypeCode.I => true,
+				MosaTypeCode.U => true,
+				MosaTypeCode.FunctionPointer => true,
+				MosaTypeCode.Object => true,
+				MosaTypeCode.SZArray => true,
+				MosaTypeCode.Var => false,
+				MosaTypeCode.ValueType => false,
+				_ => false,
+			};
 		}
 
 		#endregion Internal

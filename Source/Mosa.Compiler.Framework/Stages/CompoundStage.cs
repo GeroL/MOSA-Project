@@ -48,7 +48,7 @@ namespace Mosa.Compiler.Framework.Stages
 		{
 			int size = TypeLayout.GetTypeSize(type);
 
-			Debug.Assert(size > 0);
+			//Debug.Assert(size > 0);
 
 			var addInstruction = Is32BitPlatform ? (BaseInstruction)IRInstruction.Add32 : IRInstruction.Add64;
 

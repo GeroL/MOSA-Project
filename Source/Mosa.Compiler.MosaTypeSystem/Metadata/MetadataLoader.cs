@@ -8,6 +8,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Mosa.Compiler.MosaTypeSystem.Metadata
 {
@@ -47,9 +48,8 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			LoadedUnits = new List<MosaUnit>();
 		}
 
-		public MosaModule Load(ModuleDef moduleDef)
+		public MosaModule LoadModule(ModuleDef moduleDef)
 		{
-
 			var alreadyLoaded = LoadedUnits.OfType<MosaModule>().FirstOrDefault(x => x.FullName == moduleDef.FullName);
 			if (alreadyLoaded != null)
 				return alreadyLoaded;
@@ -61,12 +61,53 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 				module.UnderlyingObject = new UnitDesc<ModuleDef, object>(moduleDef, moduleDef, null);
 				module.Name = moduleDef.Name;
 				module.Assembly = moduleDef.Assembly.Name;
+			}
 
+			metadata.Controller.AddModule(mosaModule);
+			metadata.Cache.AddModule(mosaModule);
+			LoadedUnits.Add(mosaModule);
+
+			if (moduleDef.Assembly.IsCorLib() && CorLib is null)
+			{
+				var result = moduleDef.CorLibTypes.GetTypeRef("System", "Void").Resolve();
+				CorLib = Load(result.Module);
+			}
+
+			return mosaModule;
+		}
+
+		public void LoadModuleContent()
+		{
+			var modules = LoadedUnits
+				.OfType<MosaModule>()
+				.ToList();
+
+			foreach (var mosaModule in modules)
+			{
+				var moduleDef = mosaModule.GetUnderlyingObject<UnitDesc<ModuleDef, object>>().Definition;
 				foreach (var typeDef in moduleDef.GetTypes())
 				{
 					Load(mosaModule, typeDef);
 				}
 			}
+		}
+
+		public MosaModule Load(ModuleDef moduleDef)
+		{
+			LoadModule(moduleDef);
+			var alreadyLoaded = LoadedUnits.OfType<MosaModule>().FirstOrDefault(x => x.FullName == moduleDef.FullName);
+			if (alreadyLoaded != null)
+				return alreadyLoaded;
+
+			var mosaModule = metadata.Controller.CreateModule();
+
+			using (var module = metadata.Controller.MutateModule(mosaModule))
+			{
+				module.UnderlyingObject = new UnitDesc<ModuleDef, object>(moduleDef, moduleDef, null);
+				module.Name = moduleDef.Name;
+				module.Assembly = moduleDef.Assembly.Name;
+			}
+
 			metadata.Controller.AddModule(mosaModule);
 			metadata.Cache.AddModule(mosaModule);
 			LoadedUnits.Add(mosaModule);
@@ -80,9 +121,11 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			return mosaModule;
 		}
 
-		private void Load(MosaModule module, TypeDef typeDef)
+		private MosaType Load(MosaModule module, TypeDef typeDef)
 		{
 			var typeSig = typeDef.ToTypeSig();
+			if (typeCache.TryGetValue(typeSig, out var tmp))
+				return tmp;
 
 			// Check to see if its one of our classes we need for SZ Arrays
 			if (typeDef.Name.Contains("SZGenericArrayEnumerator`1"))
@@ -102,7 +145,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 				type.IsInterface = typeDef.IsInterface;
 				type.IsEnum = typeDef.IsEnum;
 				type.IsDelegate = typeDef.BaseType != null
-					&& typeDef.BaseType.DefinitionAssembly.IsCorLib()
+					&& typeDef.BaseType.DefinitionAssembly.Name == CorLib.Assembly
 					&& (typeDef.BaseType.FullName == "System.Delegate" || typeDef.BaseType.FullName == "System.MulticastDelegate");
 				type.IsModule = typeDef.IsGlobalModuleType;
 
@@ -162,6 +205,14 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 					metadata.Cache.AddProperty(mosaProperty);
 					LoadedUnits.Add(mosaProperty);
 				}
+
+				//foreach (var interfaceImpl in typeDef.Interfaces)
+				//{
+				//	var typeDefinition = interfaceImpl.Interface.ResolveTypeDef();
+				//	var result = Load(module, typeDefinition);
+
+				//	type.Interfaces.Add(result.Name, result);
+				//}
 			}
 			typeCache[typeSig] = mosaType;
 			metadata.Controller.AddType(mosaType);
@@ -175,6 +226,8 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 					.Select(x => x.Value.GetUnderlyingObject<UnitDesc<MethodDef, MethodSig>>())
 					.ToArray();
 			}
+
+			return mosaType;
 		}
 
 		private void LoadField(MosaType declType, MosaField.Mutator field, FieldDef fieldDef)
