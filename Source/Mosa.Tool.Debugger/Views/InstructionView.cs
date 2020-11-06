@@ -11,7 +11,7 @@ namespace Mosa.Tool.Debugger.Views
 {
 	public partial class InstructionView : DebugDockContent
 	{
-		private BindingList<InstructionEntry> instructions = new BindingList<InstructionEntry>();
+		private readonly BindingList<InstructionEntry> instructions = new BindingList<InstructionEntry>();
 
 		private class InstructionEntry
 		{
