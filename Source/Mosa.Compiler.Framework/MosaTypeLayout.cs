@@ -476,6 +476,9 @@ namespace Mosa.Compiler.Framework
 		/// <param name="type">The type.</param>
 		private void ResolveType(MosaType type)
 		{
+			if (type == null)
+				return;
+
 			if (type.IsModule)
 				return;
 
@@ -488,6 +491,18 @@ namespace Mosa.Compiler.Framework
 				return;
 			}
 
+			foreach (var interfaceType in type.Interfaces)
+			{
+				ResolveType(interfaceType.Value);
+			}
+
+			ResolveType(type.BaseType);
+
+			ProcessType(type);
+		}
+
+		private void ProcessType(MosaType type)
+		{
 			if (resolvedTypes.Contains(type))
 				return;
 
@@ -495,24 +510,14 @@ namespace Mosa.Compiler.Framework
 
 			if (type.BaseType != null)
 			{
-				ResolveType(type.BaseType);
-
 				Addchildren(type.BaseType, type);
 			}
 
 			if (type.IsInterface)
 			{
 				ResolveInterfaceType(type);
-				CreateMethodTable(type);
-				return;
 			}
-
-			foreach (var interfaceType in type.Interfaces.Values)
-			{
-				ResolveInterfaceType(interfaceType);
-			}
-
-			if (type.GetPrimitiveSize(NativePointerSize) != null)
+			else if (type.GetPrimitiveSize(NativePointerSize) != null)
 			{
 				typeSizes[type] = type.GetPrimitiveSize(NativePointerSize).Value;
 			}
@@ -600,8 +605,9 @@ namespace Mosa.Compiler.Framework
 			if (type.IsModule)
 				return;
 
-			if (type.HasOpenGenericParams)
-				return;
+			//TODO: Document why this should not be added
+			//if (type.HasOpenGenericParams)
+			//	return;
 
 			if (interfaces.Contains(type))
 				return;

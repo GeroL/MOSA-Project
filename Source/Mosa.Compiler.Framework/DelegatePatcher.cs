@@ -82,13 +82,13 @@ namespace Mosa.Compiler.Framework
 			var branchInstruction = methodCompiler.Architecture.Is32BitPlatform ? (BaseInstruction)IRInstruction.Branch32 : IRInstruction.Branch64;
 			var nativeIntegerType = methodCompiler.Architecture.Is32BitPlatform ? methodCompiler.TypeSystem.BuiltIn.U4 : methodCompiler.TypeSystem.BuiltIn.U8;
 
-			var methodPointerField = GetField(methodCompiler.Method.DeclaringType, "methodPointer");
-			int methodPointerOffset = methodCompiler.TypeLayout.GetFieldOffset(methodPointerField);
-			var methodPointerOffsetOperand = methodCompiler.CreateConstant(methodPointerOffset);
-
 			var instanceField = GetField(methodCompiler.Method.DeclaringType, "instance");
 			int instanceOffset = methodCompiler.TypeLayout.GetFieldOffset(instanceField);
 			var instanceOffsetOperand = methodCompiler.CreateConstant(instanceOffset);
+
+			var methodPointerField = GetField(methodCompiler.Method.DeclaringType, "methodPointer");
+			int methodPointerOffset = methodCompiler.TypeLayout.GetFieldOffset(methodPointerField);
+			var methodPointerOffsetOperand = methodCompiler.CreateConstant(methodPointerOffset);
 
 			var size = methodCompiler.Architecture.NativeInstructionSize;
 			bool withReturn = (methodCompiler.Method.Signature.ReturnType == null) ? false : !methodCompiler.Method.Signature.ReturnType.IsVoid;

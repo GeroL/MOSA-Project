@@ -382,6 +382,7 @@ namespace Mosa.Compiler.Framework
 		/// </summary>
 		public void Compile()
 		{
+
 			PlugMethod();
 
 			PatchDelegate();

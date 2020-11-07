@@ -194,13 +194,14 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 				}
 			}
 
+			PatchConnections();
+
 			while (arrayResolveQueue.Count > 0)
 			{
 				var type = arrayResolveQueue.Dequeue();
 				ResolveSZArray(type);
 			}
-
-			PatchConnections();
+			Debug.Assert(metadata.TypeSystem.AllTypes.Any(x => x.FullName.EndsWith("ICollection`1")));
 
 			var tmp = metadata.TypeSystem.AllTypes.Where(x => x.IsInterface
 			&& x.GetUnderlyingObject<UnitDesc<TypeDef, TypeSig>>().Definition.Interfaces.Count > x.Interfaces.Count)
@@ -388,14 +389,14 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 						// HACK: the normal Equals for methods only compares signatures which causes issues with wrong methods being removed from the list
 						//(szHelperType.Methods as List<MosaMethod>).RemoveAll(x => ReferenceEquals(x, method));
 
-						szHelperType.Methods.Remove(method.Key);
+						//szHelperType.Methods.Remove(method.Key);
 
 						using (var mMethod = typeSystem.Controller.MutateMethod(method.Value))
 						{
 							mMethod.DeclaringType = arrayType;
 						}
 
-						type.Methods[method.Value.FullName] = method.Value;
+						type.Methods[method.Key] = method.Value;
 					}
 
 					// Add interfaces to the type and copy properties from interfaces into type so we can expose them
@@ -408,7 +409,9 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 						if (iface is null)
 							continue;
 
-						type.Interfaces.Add(iface.Name, iface);
+						if (!type.Interfaces.ContainsKey(iface.Name))
+							type.Interfaces.Add(iface.Name, iface);
+
 						foreach (var property in iface.Properties)
 						{
 							var newProperty = typeSystem.Controller.CreateProperty(property.Value);

@@ -4,9 +4,11 @@ using Mosa.Compiler.Common.Exceptions;
 using Mosa.Compiler.Framework.Linker;
 using Mosa.Compiler.Framework.Trace;
 using Mosa.Compiler.MosaTypeSystem;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 namespace Mosa.Compiler.Framework
 {
@@ -300,9 +302,10 @@ namespace Mosa.Compiler.Framework
 			}
 			catch (Exception ex)
 			{
-				MethodCompiler.Stop();
+				//MethodCompiler.Stop();
 				PostEvent(CompilerEvent.Exception, $"Method: {Method} -> {ex}");
-				MethodCompiler.Compiler.Stop();
+				//MethodCompiler.Compiler.Stop();
+				throw;
 			}
 
 			PostTraceLogs(traceLogs);

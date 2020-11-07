@@ -6,10 +6,12 @@ using Mosa.Compiler.Framework.Linker;
 using Mosa.Compiler.Framework.Stages;
 using Mosa.Compiler.Framework.Trace;
 using Mosa.Compiler.MosaTypeSystem;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 
@@ -305,7 +307,7 @@ namespace Mosa.Compiler.Framework
 			PostEvent(CompilerEvent.MethodCompileStart, method.FullName, threadID);
 
 			var pipeline = GetOrCreateMethodStagePipeline(threadID);
-
+			method.Resolve();
 			var methodCompiler = new MethodCompiler(this, method, basicBlocks, threadID)
 			{
 				Pipeline = pipeline
@@ -399,14 +401,28 @@ namespace Mosa.Compiler.Framework
 			PostEvent(CompilerEvent.CompilingMethodsCompleted);
 		}
 
-		private MosaMethod ProcessQueue(int threadID = 0)
+		private CompilerResult ProcessQueue(int threadID = 0)
 		{
-			var method = MethodScheduler.GetMethodToCompile();
+			CompilerResult method = default;
 
-			if (method == null)
-				return null;
+			try
+			{
+				method = MethodScheduler.GetMethodToCompile();
 
-			return CompileMethod(method, threadID);
+				if (method == null)
+					return null;
+
+				method.CompiledMethod = CompileMethod(method.Method, threadID);
+				method.Result = "OK";
+				return method;
+			}
+			catch (Exception e)
+			{
+				method.Result = e.Message;
+				MethodScheduler.AddToQueue(method);
+			}
+
+			return method;
 		}
 
 		public void CompileMethod(MosaMethod method)
@@ -440,81 +456,42 @@ namespace Mosa.Compiler.Framework
 		{
 			PostEvent(CompilerEvent.CompilingMethods);
 
-			ExecuteThreadedCompilePass(maxThreads);
+			ExecuteThreadedCompilePassNew(maxThreads);
 
 			PostEvent(CompilerEvent.CompilingMethodsCompleted);
 		}
 
-		private void ExecuteThreadedCompilePass(int maxThreads)
+		private void ExecuteThreadedCompilePassNew(int maxThreads)
 		{
-			//maxThreads = 512;
+			var threads = Enumerable
+				.Range(0, maxThreads)
+				.Select(x => new Thread(CompilePassThread))
+				.ToList();
 
-			int threadLaunched = 0;
+			threads.ForEach(x => x.Start());
+			threads.ForEach(x => x.Join());
+		}
 
-			var threadIDs = new Stack<int>();
-
-			for (var i = 1; i <= maxThreads; i++)
-			{
-				threadIDs.Push(i);
-			}
-
+		private void CompilePassThread() //TODO: Add IProgress<float> to report progress
+		{
+			var threadID = Thread.CurrentThread.ManagedThreadId;
+			int success = 0;
+			// lets check for another one
 			while (true)
 			{
-				int launched;
+				var result = ProcessQueue(threadID);
+				if (result == null)
+					return;
 
-				lock (threadIDs)
+				if (result.Result != "OK")
 				{
-					launched = threadLaunched;
+					var msg = $"{result.Method.FullName}-{result.Attemps}: {result.Result}{Environment.NewLine}";
+					File.AppendAllText($"Exception{threadID}.txt", msg);
 				}
+				else 
+					success++; // get some stats here only
 
-				// are available threads?
-				if (launched < maxThreads)
-				{
-					// Yes - is there a method to compile
-					var method = MethodScheduler.GetMethodToCompile();
-
-					if (method != null)
-					{
-						int threadID;
-
-						lock (threadIDs)
-						{
-							threadID = threadIDs.Pop();
-							threadLaunched++;
-						}
-
-						ThreadPool.QueueUserWorkItem((state) =>
-						{
-							CompileMethod(method, threadID);
-
-							// lets check for another one
-							while (true)
-							{
-								var method2 = MethodScheduler.GetMethodToCompile();
-
-								if (method2 == null)
-									break;
-
-								CompileMethod(method2, threadID);
-							}
-
-							lock (threadIDs)
-							{
-								threadIDs.Push(threadID);
-								threadLaunched--;
-							}
-						});
-					}
-					else
-					{
-						if (launched == 0)
-							return; // all done
-					}
-				}
-				else
-				{
-					Thread.Yield();
-				}
+				// Would report progress here
 			}
 		}
 

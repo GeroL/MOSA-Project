@@ -64,7 +64,7 @@ namespace Mosa.Platform.x86.Stages
 			var source = context.Operand1;
 			var result = context.Result;
 
-			Debug.Assert(result.IsCPURegister);
+			//Debug.Assert(result.IsCPURegister);
 
 			if (source.IsCPURegister && result.Register == source.Register)
 			{
