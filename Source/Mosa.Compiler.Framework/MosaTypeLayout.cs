@@ -305,7 +305,8 @@ namespace Mosa.Compiler.Framework
 			{
 				ResolveType(type);
 
-				// TODO: Cache this
+				if (type.IsPointer)
+					type = type.ElementType;
 
 				var methodTable = new MosaMethod[interfaceType.Methods.Count];
 
@@ -510,7 +511,7 @@ namespace Mosa.Compiler.Framework
 
 			if (type.BaseType != null)
 			{
-				Addchildren(type.BaseType, type);
+				AddChildren(type.BaseType, type);
 			}
 
 			if (type.IsInterface)
@@ -642,7 +643,12 @@ namespace Mosa.Compiler.Framework
 				if (!field.IsStatic)
 				{
 					// Set the field address
-					fieldOffsets.Add(field, typeSize);
+					if (fieldOffsets.TryGetValue(field, out var tmpSize))
+					{
+						Debug.Assert(tmpSize == typeSize);
+					}
+					else
+						fieldOffsets.Add(field, typeSize);
 
 					int fieldSize = GetFieldSize(field);
 					typeSize += fieldSize;
@@ -756,8 +762,8 @@ namespace Mosa.Compiler.Framework
 
 			foreach (var method in type.Methods.Values)
 			{
-				if (method.HasOpenGenericParams)
-					continue;
+				//if (method.HasOpenGenericParams)
+				//	continue;
 
 				if (IsExplicitInterfaceMethod(method) && methodFound != null)
 					continue;
@@ -769,6 +775,10 @@ namespace Mosa.Compiler.Framework
 					if (interfaceMethod.Equals(method))
 					{
 						return method;
+					}
+					else
+					{
+
 					}
 				}
 			}
@@ -858,7 +868,7 @@ namespace Mosa.Compiler.Framework
 					var newSlot = FindOverrideSlot(methodTable, method);
 					if (newSlot != -1)
 					{
-						SetMethodOverridden(method, newSlot);
+						SetMethodOverridden(type, method, newSlot);
 						slot = newSlot;
 					}
 				}
@@ -922,7 +932,7 @@ namespace Mosa.Compiler.Framework
 			return -1;
 		}
 
-		private void SetMethodOverridden(MosaMethod method, int slot)
+		private void SetMethodOverridden(MosaType type, MosaMethod method, int slot)
 		{
 			// this method is overridden (obviously)
 			overriddenMethods.Add(method);
@@ -932,7 +942,7 @@ namespace Mosa.Compiler.Framework
 			// up to the root method will be performed at that time
 
 			// go up the inheritance chain
-			var type = method.DeclaringType.BaseType;
+			type = type.BaseType; 
 			while (type != null)
 			{
 				var table = typeMethodTables[type];
@@ -951,7 +961,7 @@ namespace Mosa.Compiler.Framework
 			}
 		}
 
-		private void Addchildren(MosaType baseType, MosaType child)
+		private void AddChildren(MosaType baseType, MosaType child)
 		{
 			if (!derivedTypes.TryGetValue(baseType, out List<MosaType> children))
 			{

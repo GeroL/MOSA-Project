@@ -4,6 +4,7 @@ using Mosa.Compiler.Common.Exceptions;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 
@@ -45,7 +46,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 		public bool HasImplementation { get { return Code.Count != 0; } }
 
-		private List<MosaType> genericArguments;
+		private GenericArgumentsCollection genericArguments;
 
 		public IList<MosaType> GenericArguments { get; private set; }
 
@@ -77,11 +78,11 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 		public bool IsTypeConstructor { get { return IsSpecialName && IsRTSpecialName && IsStatic && Name == ".cctor"; } }
 
-		public Action Resolve { get; internal set; }
+		public bool IsResolved { get; internal set; }
 
 		internal MosaMethod()
 		{
-			GenericArguments = (genericArguments = new List<MosaType>()).AsReadOnly();
+			GenericArguments = (genericArguments = new GenericArgumentsCollection());
 
 			LocalVariables = (localVars = new List<MosaLocal>()).AsReadOnly();
 			Code = (instructions = new List<MosaInstruction>()).AsReadOnly();
@@ -95,7 +96,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 			var result = (MosaMethod)base.MemberwiseClone();
 			try
 			{
-				result.GenericArguments = (result.genericArguments = new List<MosaType>(genericArguments)).AsReadOnly();
+				result.GenericArguments = (result.genericArguments = new GenericArgumentsCollection(genericArguments));
 
 				result.LocalVariables = (result.localVars = new List<MosaLocal>(localVars)).AsReadOnly();
 				result.Code = (result.instructions = instructions.ToList()).AsReadOnly();
@@ -109,14 +110,28 @@ namespace Mosa.Compiler.MosaTypeSystem
 			{
 				throw new AssemblyLoadException();
 			}
-		
+
 		}
 
 		public bool Equals(MosaMethod other)
 		{
-			return SignatureComparer.Equals(Signature, other.Signature);
+			return string.Equals(FullName, other.FullName) || SignatureComparer.Equals(Signature, other.Signature);
+			return this.DeclaringType.FullName == other.DeclaringType.FullName && this.Name == other.Name;
+		}
 
-			//return SignatureEquals(other) && this.DeclaringType.FullName == other.DeclaringType.FullName && this.Name == other.Name;
+		/// <summary>
+		/// Removes duplicates and preserves order
+		/// </summary>
+		public class GenericArgumentsCollection : KeyedCollection<uint, MosaType>
+		{
+			public GenericArgumentsCollection() { }
+			public GenericArgumentsCollection(GenericArgumentsCollection other) : base()
+			{
+				foreach (var item in other)
+					this.Add(item);
+			}
+
+			protected override uint GetKeyForItem(MosaType item) => item.ID;
 		}
 
 		public class Mutator : MosaUnit.MutatorBase
@@ -129,7 +144,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 				this.method = method;
 			}
 
-			
+
 
 			public MosaModule Module { set { method.Module = value; } }
 
@@ -163,7 +178,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 			public bool HasOpenGenericParams { set { method.HasOpenGenericParams = value; } }
 
-			public IList<MosaType> GenericArguments { get { return method.genericArguments; } }
+			public GenericArgumentsCollection GenericArguments { get { return method.genericArguments; } }
 
 			public MosaMethodAttributes MethodAttributes { set { method.MethodAttributes = value; } }
 
@@ -192,6 +207,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 					if (GenericArguments.Count > 0)
 					{
 						methodName.Append("<");
+
 						for (int i = 0; i < GenericArguments.Count; i++)
 						{
 							if (i != 0)

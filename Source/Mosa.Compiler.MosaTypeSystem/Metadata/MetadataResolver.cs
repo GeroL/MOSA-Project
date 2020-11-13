@@ -6,6 +6,7 @@ using dnlib.DotNet.Emit;
 using Mosa.Compiler.Common.Exceptions;
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,18 +25,21 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 		private readonly CLRMetadata metadata;
 		private readonly MethodResolver _methodResolver;
 
+		private readonly Channel<MosaUnit> _channel;
+		private readonly ChannelWriter<MosaUnit> _channelWriter;
+		private readonly ChannelReader<MosaUnit> _channelReader;
+
+
 		public MetadataResolver(CLRMetadata metadata)
 		{
 			this.metadata = metadata;
 
-			var channel = Channel.CreateUnbounded<MosaUnit>(new UnboundedChannelOptions { SingleReader = false, SingleWriter = false });
-			_channelWriter = channel.Writer;
-			_channelReader = channel.Reader;
+			_channel = Channel.CreateUnbounded<MosaUnit>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
+			_channelWriter = _channel.Writer;
+			_channelReader = _channel.Reader;
 			_methodResolver = new MethodResolver(metadata);
 		}
 
-		private readonly ChannelWriter<MosaUnit> _channelWriter;
-		private readonly ChannelReader<MosaUnit> _channelReader;
 
 		//private readonly Queue<MosaUnit> resolveQueue = new Queue<MosaUnit>();
 		private readonly Queue<MosaType> arrayResolveQueue = new Queue<MosaType>();
@@ -71,7 +75,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 					if (count == 0)
 						return;
 
-					Thread.Sleep(1);
+					Thread.Yield();
 				}
 				else
 				{
@@ -163,12 +167,8 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			}
 		}
 
-		public void Resolve()
+		private void StartResolving()
 		{
-			//Setup resolving queue 
-			foreach (var unit in metadata.Loader.LoadedUnits)
-				EnqueueForResolve(unit);
-
 			var t1 = new Thread(new ThreadStart(ResolveThread));
 			t1.Start();
 
@@ -180,7 +180,15 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			}
 
 			t1.Join();
+		}
 
+		public void Resolve()
+		{
+			//Setup resolving queue 
+			foreach (var unit in metadata.Loader.LoadedUnits)
+				EnqueueForResolve(unit);
+
+			StartResolving();
 
 			foreach (var module in metadata.Cache.Modules.Values)
 			{
@@ -203,9 +211,20 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			}
 			Debug.Assert(metadata.TypeSystem.AllTypes.Any(x => x.FullName.EndsWith("ICollection`1")));
 
-			var tmp = metadata.TypeSystem.AllTypes.Where(x => x.IsInterface
-			&& x.GetUnderlyingObject<UnitDesc<TypeDef, TypeSig>>().Definition.Interfaces.Count > x.Interfaces.Count)
-			 .ToList();
+			//foreach (var method in metadata.Loader.LoadedUnits.OfType<MosaMethod>())
+			//{
+			//	EnqueueForResolve(method);
+			//}
+
+			//foreach (var method in metadata.TypeSystem.AllTypes.SelectMany(x=> x.Methods))
+			//{
+			//	EnqueueForResolve(method.Value);
+			//}
+
+			//StartResolving();
+			//var tmp = metadata.TypeSystem.AllTypes.Where(x => x.IsInterface
+			//&& x.GetUnderlyingObject<UnitDesc<TypeDef, TypeSig>>().Definition.Interfaces.Count > x.Interfaces.Count)
+			// .ToList();
 		}
 
 		private void ResolveInterfacesInBaseTypes(MosaType.Mutator mosaType, MosaType baseType)
@@ -243,6 +262,15 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 					resultArray[i] = ToMosaCAArgument(valueArray[i]);
 				}
 			}
+			else if(value is IEnumerable<CAArgument> tmp)
+			{
+				var resultArray = new MosaCustomAttribute.Argument[tmp.Count()];
+				for (int i = 0; i < resultArray.Length; i++)
+				{
+					resultArray[i] = ToMosaCAArgument(tmp.ElementAt(i));
+				}
+				value = resultArray;
+			}
 
 			return new MosaCustomAttribute.Argument(metadata.Loader.GetType(arg.Type), value);
 		}
@@ -250,6 +278,9 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 
 		private void ResolveType(MosaType type)
 		{
+			if (metadata.Controller.HasType(type))
+				return;
+
 			var resolver = new GenericArgumentResolver();
 
 			var srcType = type;
@@ -378,6 +409,9 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			{
 				using (var szHelperType = typeSystem.Controller.MutateType(szHelper))
 				{
+					//Array does not have interface implementations.
+
+					type.Interfaces.Clear();
 					// Add the methods to the mutable type
 					var methods = szHelper
 						.Methods
@@ -399,29 +433,29 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 						type.Methods[method.Key] = method.Value;
 					}
 
-					// Add interfaces to the type and copy properties from interfaces into type so we can expose them
-					var list = new LinkedList<MosaType>();
-					list.AddLast(typeSystem.GetTypeByName(typeSystem.CorLib, "System.Collections.Generic", "IList`1<" + arrayType.ElementType.FullName + ">"));
-					list.AddLast(typeSystem.GetTypeByName(typeSystem.CorLib, "System.Collections.Generic", "ICollection`1<" + arrayType.ElementType.FullName + ">"));
-					list.AddLast(typeSystem.GetTypeByName(typeSystem.CorLib, "System.Collections.Generic", "IEnumerable`1<" + arrayType.ElementType.FullName + ">"));
-					foreach (var iface in list)
-					{
-						if (iface is null)
-							continue;
+					//// Add interfaces to the type and copy properties from interfaces into type so we can expose them
+					//var list = new LinkedList<MosaType>();
+					//list.AddLast(typeSystem.GetTypeByName(typeSystem.CorLib, "System.Collections.Generic", "IList`1<" + arrayType.ElementType.FullName + ">"));
+					//list.AddLast(typeSystem.GetTypeByName(typeSystem.CorLib, "System.Collections.Generic", "ICollection`1<" + arrayType.ElementType.FullName + ">"));
+					//list.AddLast(typeSystem.GetTypeByName(typeSystem.CorLib, "System.Collections.Generic", "IEnumerable`1<" + arrayType.ElementType.FullName + ">"));
+					//foreach (var iface in list)
+					//{
+					//	if (iface is null)
+					//		continue;
 
-						if (!type.Interfaces.ContainsKey(iface.Name))
-							type.Interfaces.Add(iface.Name, iface);
+					//	if (!type.Interfaces.ContainsKey(iface.Name))
+					//		type.Interfaces.Add(iface.Name, iface);
 
-						foreach (var property in iface.Properties)
-						{
-							var newProperty = typeSystem.Controller.CreateProperty(property.Value);
-							using (var mProperty = typeSystem.Controller.MutateProperty(newProperty))
-							{
-								mProperty.DeclaringType = arrayType;
-							}
-							type.Properties.Add(newProperty.Name, newProperty);
-						}
-					}
+					//	foreach (var property in iface.Properties)
+					//	{
+					//		var newProperty = typeSystem.Controller.CreateProperty(property.Value);
+					//		using (var mProperty = typeSystem.Controller.MutateProperty(newProperty))
+					//		{
+					//			mProperty.DeclaringType = arrayType;
+					//		}
+					//		type.Properties.Add(newProperty.Name, newProperty);
+					//	}
+					//}
 				}
 			}
 		}

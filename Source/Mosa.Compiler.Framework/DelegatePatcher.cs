@@ -83,10 +83,17 @@ namespace Mosa.Compiler.Framework
 			var nativeIntegerType = methodCompiler.Architecture.Is32BitPlatform ? methodCompiler.TypeSystem.BuiltIn.U4 : methodCompiler.TypeSystem.BuiltIn.U8;
 
 			var instanceField = GetField(methodCompiler.Method.DeclaringType, "instance");
+			var methodPointerField = GetField(methodCompiler.Method.DeclaringType, "methodPointer");
+
+			if (instanceField is null && methodPointerField is null)
+			{
+				Debug.WriteLine($"Failed to patch delegate for {methodCompiler.Method}");
+				return;
+			}
+
 			int instanceOffset = methodCompiler.TypeLayout.GetFieldOffset(instanceField);
 			var instanceOffsetOperand = methodCompiler.CreateConstant(instanceOffset);
-
-			var methodPointerField = GetField(methodCompiler.Method.DeclaringType, "methodPointer");
+			
 			int methodPointerOffset = methodCompiler.TypeLayout.GetFieldOffset(methodPointerField);
 			var methodPointerOffsetOperand = methodCompiler.CreateConstant(methodPointerOffset);
 

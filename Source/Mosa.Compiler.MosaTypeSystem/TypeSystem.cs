@@ -377,6 +377,11 @@ namespace Mosa.Compiler.MosaTypeSystem
 				typeSystem.Modules.Add(module);
 			}
 
+			public bool HasType(MosaType type)
+			{
+				return type.Module.Types.ContainsKey(type.ID);
+			}
+
 			public void AddType(MosaType type)
 			{
 				type.Module.Types[type.ID] = type;

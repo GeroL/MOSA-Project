@@ -547,7 +547,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			if (mosaMethod == null)
 				throw new AssemblyLoadException();
 
-			var genericArgs = new List<TypeSig>();
+			var genericArgs = new List<TypeSig>(genericArguments.Count);
 			foreach (var genericArg in genericArguments)
 			{
 				genericArgs.Add(resolver.Resolve(genericArg));
@@ -578,6 +578,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 				if (m.GenericArguments.Count > 0)
 				{
 					var failedGenericArgumentMatch = false;
+
 					for (var i = 0; i < m.GenericArguments.Count; i++)
 					{
 						if (comparer.Equals(genericArguments[i], m.GenericArguments[i].GetTypeSig()))
@@ -602,7 +603,10 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 				foreach (var genericArg in genericArgs)
 				{
 					hasOpening |= genericArg.HasOpenGenericParameter();
-					_mosaMethod.GenericArguments.Add(GetType(genericArg));
+
+					var t = GetType(genericArg);
+					if (!_mosaMethod.GenericArguments.Contains(t.ID))
+						_mosaMethod.GenericArguments.Add(t);
 				}
 
 				_mosaMethod.UnderlyingObject = desc.Clone(newSig);

@@ -32,6 +32,8 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 		void AddType(MosaType type);
 
+		bool HasType(MosaType type);
+
 		void SetCorLib(MosaModule module);
 
 		void SetEntryPoint(MosaMethod entryPoint);

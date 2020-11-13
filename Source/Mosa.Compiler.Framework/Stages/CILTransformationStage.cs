@@ -363,7 +363,7 @@ namespace Mosa.Compiler.Framework.Stages
 			if (!type.IsValueType)
 			{
 				Debug.Assert(result.IsVirtualRegister);
-				//Debug.Assert(value.IsVirtualRegister);
+				Debug.Assert(value.IsVirtualRegister);
 
 				var moveInstruction = GetMoveInstruction(type);
 				context.SetInstruction(moveInstruction, context.Result, context.Operand1);

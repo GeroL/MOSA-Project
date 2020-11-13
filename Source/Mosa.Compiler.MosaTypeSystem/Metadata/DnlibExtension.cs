@@ -118,7 +118,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 
 		public static IList<TypeSig> GetGenericArguments(this IList<MosaType> types)
 		{
-			var result = new List<TypeSig>();
+			var result = new List<TypeSig>(types.Count);
 
 			foreach (var type in types)
 			{

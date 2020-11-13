@@ -83,7 +83,7 @@ namespace Mosa.Compiler.Framework.Stages
 
 			var incoming = incomingMoves[block];
 
-			if (incoming == null)
+			if (incoming == null )
 			{
 				worklist.Enqueue(block); // re-queue for later
 				return;
@@ -92,8 +92,10 @@ namespace Mosa.Compiler.Framework.Stages
 			Debug.Assert(incoming != null);
 
 			var operandStack = new Stack<Operand>(incoming);
-
-			AssignOperands(block, operandStack);
+			//if (operandStack.Count > 0)
+			{
+				AssignOperands(block, operandStack);
+			}
 
 			var outgoing = new List<Operand>(operandStack);
 
@@ -215,6 +217,10 @@ namespace Mosa.Compiler.Framework.Stages
 			{
 				if (ctx.GetOperand(index) != null)
 					continue;
+
+				//TODO: Is this a Bug?
+				//if (currentStack.Count == 0)
+				//	return;
 
 				ctx.SetOperand(index, currentStack.Pop());
 			}

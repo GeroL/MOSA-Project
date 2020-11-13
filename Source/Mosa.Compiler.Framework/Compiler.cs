@@ -307,7 +307,7 @@ namespace Mosa.Compiler.Framework
 			PostEvent(CompilerEvent.MethodCompileStart, method.FullName, threadID);
 
 			var pipeline = GetOrCreateMethodStagePipeline(threadID);
-			method.Resolve();
+
 			var methodCompiler = new MethodCompiler(this, method, basicBlocks, threadID)
 			{
 				Pipeline = pipeline
@@ -444,7 +444,9 @@ namespace Mosa.Compiler.Framework
 
 			lock (method)
 			{
-				CompileMethod(method, null, threadID);
+				//TODO: BasicBlocks are null if method has no implementation
+				if (method.Code?.Count > 0)
+					CompileMethod(method, null, threadID);
 			}
 
 			CompilerHooks.NotifyProgress?.Invoke(MethodScheduler.TotalMethods, MethodScheduler.TotalMethods - MethodScheduler.TotalQueuedMethods);
@@ -488,7 +490,7 @@ namespace Mosa.Compiler.Framework
 					var msg = $"{result.Method.FullName}-{result.Attemps}: {result.Result}{Environment.NewLine}";
 					File.AppendAllText($"Exception{threadID}.txt", msg);
 				}
-				else 
+				else
 					success++; // get some stats here only
 
 				// Would report progress here

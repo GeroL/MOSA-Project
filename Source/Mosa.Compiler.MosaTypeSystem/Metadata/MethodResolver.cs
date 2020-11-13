@@ -23,35 +23,59 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 
 		public void ResolveMethod(MosaMethod method)
 		{
+			if (method.UnderlyingObject is null)
+				return;
+
+			if (method.IsResolved)
+				return;
+
+			//if (method.Resolve != null)
+			//{
+			//	method.Resolve();
+			//	return;
+			//}
+
 			var resolver = new GenericArgumentResolver();
+
+			//method.Resolve = () => ResolveBodyInternal(method, resolver);
+
 			bool hasOpening = method.DeclaringType.HasOpenGenericParams;
+			var desc = method.GetUnderlyingObject<UnitDesc<MethodDef, MethodSig>>();
+
+			var returnType = _metadata.Loader.GetType(resolver.Resolve(desc.Signature.RetType));
+			hasOpening |= returnType.HasOpenGenericParams;
 
 			if (method.DeclaringType.GenericArguments.Count > 0)
 			{
-				foreach (var i in method.DeclaringType.GenericArguments.GetGenericArguments())
-				{
-					hasOpening |= i.HasOpenGenericParameter();
-				}
+				var args = method.DeclaringType.GenericArguments.GetGenericArguments();
+				if (!hasOpening)
+					foreach (var i in args)
+					{
+						hasOpening |= i.HasOpenGenericParameter();
+						if (hasOpening)
+							break;
+					}
 
-				resolver.PushTypeGenericArguments(method.DeclaringType.GenericArguments.GetGenericArguments());
+				resolver.PushTypeGenericArguments(args);
 			}
 
 			if (method.GenericArguments.Count > 0)
 			{
-				foreach (var i in method.GenericArguments.GetGenericArguments())
-				{
-					hasOpening |= i.HasOpenGenericParameter();
-				}
+				var args = method.GenericArguments.GetGenericArguments();
+				if (!hasOpening)
+					foreach (var i in args)
+					{
+						hasOpening |= i.HasOpenGenericParameter();
+						if (hasOpening)
+							break;
+					}
 
-				resolver.PushMethodGenericArguments(method.GenericArguments.GetGenericArguments());
+				resolver.PushMethodGenericArguments(args);
 			}
 
 			using (var mosaMethod = _metadata.Controller.MutateMethod(method))
 			{
-				var desc = method.GetUnderlyingObject<UnitDesc<MethodDef, MethodSig>>();
 
-				var returnType = _metadata.Loader.GetType(resolver.Resolve(desc.Signature.RetType));
-				hasOpening |= returnType.HasOpenGenericParams;
 				var pars = new List<MosaParameter>();
 
 				Debug.Assert(desc.Signature.GetParamCount() + (desc.Signature.HasThis ? 1 : 0) == desc.Definition.Parameters.Count);
@@ -65,17 +89,13 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 					{
 						Debug.WriteLine($"Could not resolve type for: {param.Name} on {method.FullName}");
 						continue;
-						var t = System.Reflection.TypeInfo.GetType(desc.Definition.DeclaringType.AssemblyQualifiedName);
+						//var h = t.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Instance);
+						//var m = h.First(x => x.Name == desc.Definition.Name);
 
-						var h = t.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Instance);
-						var m = h.First(x => x.Name == desc.Definition.Name);
-
-
-
-						var p = m.GetParameters();
-						var u = desc.Signature.Params.First().GetElementType();
-						var i = u.TryGetPtrSig();
-						var p2 = p.First(x => x.Name == param.Name);
+						//var p = m.GetParameters();
+						//var u = desc.Signature.Params.First().GetElementType();
+						//var i = u.TryGetPtrSig();
+						//var p2 = p.First(x => x.Name == param.Name);
 						//resolvedType = resolver.Resolve(new PtrSig(new ));
 					}
 
@@ -107,19 +127,25 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 				mosaMethod.HasOpenGenericParams = hasOpening;
 
 				ResolveCustomAttributes(mosaMethod, desc.Definition);
-
-				method.Resolve = () => ResolveBodyInternal(method, desc.Definition, resolver);
+				//ResolveBodyInternal(method, resolver);
+				if (desc.Definition.HasBody)
+					ResolveBody(desc.Definition, mosaMethod, desc.Definition.Body, resolver);
 			}
+			method.IsResolved = true;
+
 		}
 
-		private void ResolveBodyInternal(MosaMethod method, MethodDef definition, GenericArgumentResolver resolver)
+		private void ResolveBodyInternal(MosaMethod method, GenericArgumentResolver resolver)
 		{
+			var desc = method.GetUnderlyingObject<UnitDesc<MethodDef, MethodSig>>();
+			var definition = desc.Definition;
 			if (definition.HasBody)
 			{
 				using (var mosaMethod = _metadata.Controller.MutateMethod(method))
 				{
 					ResolveBody(definition, mosaMethod, definition.Body, resolver);
 				}
+				method.IsResolved = true;
 			}
 		}
 
@@ -408,6 +434,15 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 				{
 					resultArray[i] = ToMosaCAArgument(valueArray[i]);
 				}
+			}
+			else if (value is IEnumerable<CAArgument> tmp)
+			{
+				var resultArray = new MosaCustomAttribute.Argument[tmp.Count()];
+				for (int i = 0; i < resultArray.Length; i++)
+				{
+					resultArray[i] = ToMosaCAArgument(tmp.ElementAt(i));
+				}
+				value = resultArray;
 			}
 
 			return new MosaCustomAttribute.Argument(_metadata.Loader.GetType(arg.Type), value);
