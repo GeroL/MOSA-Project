@@ -1,6 +1,7 @@
 ﻿// Copyright (c) MOSA Project. Licensed under the New BSD License.
 
 using Mosa.Compiler.Common;
+
 using System.Collections.Generic;
 
 namespace Mosa.Compiler.MosaTypeSystem
@@ -83,8 +84,26 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 		public static bool Equals(MosaMethodSignature x, MosaMethodSignature y)
 		{
-			return Equals(x.ReturnType, y.ReturnType)
-				   && x.Parameters.SequenceEquals(y.Parameters);
+			if (x is null && !(y is null))
+				return false;
+
+			if (!(x is null) && y is null)
+				return false;
+
+			if (x is null && y is null)
+				return true;
+
+			if (!(x.Parameters is null) && y.Parameters is null)
+				return false;
+
+			if (x.Parameters is null && !(y.Parameters is null))
+				return false;
+
+			bool result = Equals(x.ReturnType, y.ReturnType);
+			if (!(x.Parameters is null && y.Parameters is null))
+				result &= x.Parameters.SequenceEquals(y.Parameters);
+
+			return result;
 		}
 
 		bool IEqualityComparer<MosaMethodSignature>.Equals(MosaMethodSignature x, MosaMethodSignature y)
