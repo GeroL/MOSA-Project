@@ -66,7 +66,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			if (moduleDef.Assembly.IsCorLib() && CorLib is null)
 			{
 				var result = moduleDef.CorLibTypes.GetTypeRef("System", "Void").Resolve();
-				CorLib = Load(result.Module);
+				CorLib = LoadModule(result.Module);
 			}
 
 			return mosaModule;
