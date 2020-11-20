@@ -76,6 +76,8 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 		public bool IsTypeConstructor { get { return IsSpecialName && IsRTSpecialName && IsStatic && Name == ".cctor"; } }
 
+		public bool IsResolved { get; internal set; }
+
 		internal MosaMethod()
 		{
 			GenericArguments = (genericArguments = new GenericArgumentsCollection());
@@ -104,7 +106,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 		public bool Equals(MosaMethod other)
 		{
-			return SignatureComparer.Equals(Signature, other.Signature);
+			return string.Equals(FullName, other.FullName) || SignatureComparer.Equals(Signature, other.Signature);
 
 			//return SignatureEquals(other) && this.DeclaringType.FullName == other.DeclaringType.FullName && this.Name == other.Name;
 		}
@@ -180,6 +182,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 					if (GenericArguments.Count > 0)
 					{
 						methodName.Append("<");
+
 						for (int i = 0; i < GenericArguments.Count; i++)
 						{
 							if (i != 0)

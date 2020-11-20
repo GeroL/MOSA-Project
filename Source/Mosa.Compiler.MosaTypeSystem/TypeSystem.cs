@@ -370,6 +370,11 @@ namespace Mosa.Compiler.MosaTypeSystem
 				return new MosaParameter.Mutator(parameter);
 			}
 
+			public bool HasType(MosaType type)
+			{
+				return type.Module.Types.ContainsKey(type.ID);
+			}
+
 			public void AddModule(MosaModule module)
 			{
 				typeSystem.Modules.Add(module);

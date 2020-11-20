@@ -1,12 +1,15 @@
 ﻿// Copyright (c) MOSA Project. Licensed under the New BSD License.
 
 using Mosa.Compiler.Common;
+
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Text;
 
 namespace Mosa.Compiler.MosaTypeSystem
 {
+
 	public class MosaType : MosaUnit, IEquatable<MosaType>
 	{
 		public MosaModule Module { get; private set; }
@@ -33,18 +36,18 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 		public int? PackingSize { get; private set; }
 
-		private List<MosaMethod> methods;
-		private List<MosaField> fields;
-		private List<MosaProperty> properties;
-		private List<MosaType> interfaces;
+		private MosaUnitCollection<MosaMethod, string> methods;
+		private MosaUnitCollection<MosaField, string> fields;
+		private MosaUnitCollection<MosaProperty, string> properties;
+		private MosaUnitCollection<MosaType, string> interfaces;
 
-		public IList<MosaMethod> Methods { get; private set; }
+		public IReadOnlyList<MosaMethod> Methods { get; private set; }
 
-		public IList<MosaProperty> Properties { get; private set; }
+		public IReadOnlyList<MosaProperty> Properties { get; private set; }
 
-		public IList<MosaField> Fields { get; private set; }
+		public IReadOnlyList<MosaField> Fields { get; private set; }
 
-		public IList<MosaType> Interfaces { get; private set; }
+		public IReadOnlyList<MosaType> Interfaces { get; private set; }
 
 		public MosaTypeAttributes TypeAttributes { get; private set; }
 
@@ -167,10 +170,10 @@ namespace Mosa.Compiler.MosaTypeSystem
 		{
 			Namespace = "";
 
-			Methods = (methods = new List<MosaMethod>()).AsReadOnly();
-			Fields = (fields = new List<MosaField>()).AsReadOnly();
-			Properties = (properties = new List<MosaProperty>()).AsReadOnly();
-			Interfaces = (interfaces = new List<MosaType>()).AsReadOnly();
+			Methods = (methods = new MosaUnitCollection<MosaMethod, string>(m => m.FullName));
+			Fields = (fields = new MosaUnitCollection<MosaField, string>(f => f.Name));
+			Properties = (properties = new MosaUnitCollection<MosaProperty, string>(p => p.Name));
+			Interfaces = (interfaces = new MosaUnitCollection<MosaType, string>(t => t.Name));
 
 			GenericArguments = (genericArguments = new GenericArgumentsCollection());
 		}
@@ -179,10 +182,10 @@ namespace Mosa.Compiler.MosaTypeSystem
 		{
 			var result = (MosaType)base.MemberwiseClone();
 
-			result.Methods = (result.methods = new List<MosaMethod>(methods)).AsReadOnly();
-			result.Fields = (result.fields = new List<MosaField>(fields)).AsReadOnly();
-			result.Properties = (result.properties = new List<MosaProperty>(properties)).AsReadOnly();
-			result.Interfaces = (result.interfaces = new List<MosaType>(interfaces)).AsReadOnly();
+			result.Methods = (result.methods = new MosaUnitCollection<MosaMethod, string>(methods));
+			result.Fields = (result.fields = new MosaUnitCollection<MosaField, string>(fields));
+			result.Properties = (result.properties = new MosaUnitCollection<MosaProperty, string>(properties));
+			result.Interfaces = (result.interfaces = new MosaUnitCollection<MosaType, string>(interfaces));
 
 			result.GenericArguments = (result.genericArguments = new GenericArgumentsCollection(genericArguments));
 
@@ -256,13 +259,13 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 			public int? PackingSize { set { type.PackingSize = value; } }
 
-			public IList<MosaMethod> Methods { get { return type.methods; } }
+			public MosaUnitCollection<MosaMethod, string> Methods { get { return type.methods; } }
 
-			public IList<MosaField> Fields { get { return type.fields; } }
+			public MosaUnitCollection<MosaField, string> Fields { get { return type.fields; } }
 
-			public IList<MosaProperty> Properties { get { return type.properties; } }
+			public MosaUnitCollection<MosaProperty, string> Properties { get { return type.properties; } }
 
-			public IList<MosaType> Interfaces { get { return type.interfaces; } }
+			public MosaUnitCollection<MosaType, string> Interfaces { get { return type.interfaces; } }
 
 			public MosaTypeAttributes TypeAttributes { set { type.TypeAttributes = value; } }
 

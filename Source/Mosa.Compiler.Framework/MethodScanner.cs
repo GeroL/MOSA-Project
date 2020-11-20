@@ -5,6 +5,7 @@ using Mosa.Compiler.Framework.Trace;
 using Mosa.Compiler.MosaTypeSystem;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Mosa.Compiler.Framework
 {

@@ -2,14 +2,16 @@
 
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+
 using Mosa.Compiler.Common.Exceptions;
+
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
 namespace Mosa.Compiler.MosaTypeSystem.Metadata
 {
-	internal class MetadataResolver
+	internal class MetadataResolver : IMetadataResolver
 	{
 		private readonly CLRMetadata metadata;
 
@@ -583,7 +585,11 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 					foreach (var method in methods)
 					{
 						// HACK: the normal Equals for methods only compares signatures which causes issues with wrong methods being removed from the list
-						(szHelperType.Methods as List<MosaMethod>).RemoveAll(x => ReferenceEquals(x, method));
+						var toRemove = szHelperType.Methods
+							.Where(x => ReferenceEquals(x, method))
+							.ToList();
+
+						toRemove.ForEach(x=> szHelperType.Methods.Remove(x));
 
 						using (var mMethod = typeSystem.Controller.MutateMethod(method))
 						{
