@@ -5,6 +5,7 @@ using dnlib.DotNet;
 using Mosa.Compiler.Common.Exceptions;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -25,7 +26,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			}
 		}
 
-		private readonly Dictionary<TypeSig, MosaType> typeCache = new Dictionary<TypeSig, MosaType>(new TypeSigComparer());
+		private readonly IDictionary<TypeSig, MosaType> typeCache = new ConcurrentDictionary<TypeSig, MosaType>(new TypeSigComparer());
 		private readonly MosaType[] mvar = new MosaType[0x100];
 		private readonly MosaType[] var = new MosaType[0x100];
 		private ClassOrValueTypeSig szHelperEnumeratorSig = null;
@@ -35,6 +36,8 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 		public IList<MosaUnit> LoadedUnits { get; }
 
 		public MosaModule CorLib { get; private set; }
+
+		public MosaModule RuntimeLib { get; private set; }
 
 		private readonly CLRMetadata metadata;
 
@@ -520,7 +523,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			if (mosaMethod == null)
 				throw new AssemblyLoadException();
 
-			var genericArgs = new List<TypeSig>();
+			var genericArgs = new List<TypeSig>(genericArguments.Count);
 			foreach (var genericArg in genericArguments)
 			{
 				genericArgs.Add(resolver.Resolve(genericArg));

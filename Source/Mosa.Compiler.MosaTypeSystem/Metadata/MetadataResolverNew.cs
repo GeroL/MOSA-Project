@@ -395,7 +395,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 
 			var szHelper = typeSystem.GetTypeByName("System", "SZArrayHelper");
 			if (szHelper is null)
-				szHelper = typeSystem.GetTypeByName(typeSystem.CorLib, "System", "Array+SZArrayHelper");
+				szHelper = typeSystem.GetTypeByName("System", "Array+SZArrayHelper");
 
 			if (szHelper is null)
 				throw new CompilerException("Could not find type SZArrayHelper");
