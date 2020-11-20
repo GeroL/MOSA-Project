@@ -106,6 +106,12 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 		public bool Equals(MosaMethod other)
 		{
+			if (other is null)
+				return false;
+
+			if (Signature is null && !(other.Signature is null))
+				return false;
+
 			return string.Equals(FullName, other.FullName) || SignatureComparer.Equals(Signature, other.Signature);
 
 			//return SignatureEquals(other) && this.DeclaringType.FullName == other.DeclaringType.FullName && this.Name == other.Name;
