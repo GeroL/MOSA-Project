@@ -392,7 +392,9 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 				throw new CompilerException("Type must be a SZ Array.");
 
 			var typeSystem = arrayType.TypeSystem;
-			var szHelper = typeSystem.GetTypeByName(typeSystem.CorLib, "System", "SZArrayHelper");
+			var szHelper = typeSystem.GetTypeByName("System", "SZArrayHelper");
+			if (szHelper is null)
+				throw new CompilerException("Could not find type SZArrayHelper");
 
 			using (var type = typeSystem.Controller.MutateType(arrayType))
 			{

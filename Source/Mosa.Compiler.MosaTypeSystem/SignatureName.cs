@@ -47,6 +47,11 @@ namespace Mosa.Compiler.MosaTypeSystem
 
 		public static void UpdateType(MosaType type)
 		{
+			if (type is null)
+			{
+				throw new System.ArgumentNullException(nameof(type));
+			}
+
 			var result = new StringBuilder();
 
 			if (type.GenericArguments?.Count > 0)

@@ -234,7 +234,7 @@ namespace Mosa.Compiler.MosaTypeSystem
 			internal Mutator(MosaType type)
 				: base(type)
 			{
-				this.type = type;
+				this.type = type ?? throw new ArgumentNullException(nameof(type));
 			}
 
 			public MosaModule Module { set { type.Module = value; } }
