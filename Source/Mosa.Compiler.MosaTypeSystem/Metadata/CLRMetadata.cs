@@ -37,6 +37,8 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 				Loader.LoadModule(module);
 			}
 
+			Loader.LoadModuleContent();
+
 			Controller.SetCorLib(Loader.CorLib);
 
 			Resolver.Resolve();
