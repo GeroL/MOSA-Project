@@ -19,7 +19,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 
 		public MetadataLoader Loader { get; private set; }
 
-		public MetadataResolver Resolver { get; private set; }
+		public IMetadataResolver Resolver { get; private set; }
 
 		internal void Initialize(TypeSystem system, ITypeSystemController controller)
 		{
@@ -27,7 +27,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 			Controller = controller;
 			Cache = new MetadataCache();
 			Loader = new MetadataLoader(this);
-			Resolver = new MetadataResolver(this);
+			Resolver = new MetadataResolverNew(this);
 		}
 
 		public void LoadMetadata()
