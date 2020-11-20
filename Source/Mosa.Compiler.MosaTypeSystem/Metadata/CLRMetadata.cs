@@ -34,7 +34,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 		{
 			foreach (var module in moduleLoader.Modules)
 			{
-				Loader.Load(module);
+				Loader.LoadModule(module);
 			}
 
 			Controller.SetCorLib(Loader.CorLib);
