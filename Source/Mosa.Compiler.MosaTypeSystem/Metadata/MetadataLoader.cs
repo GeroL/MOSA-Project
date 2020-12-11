@@ -171,7 +171,7 @@ namespace Mosa.Compiler.MosaTypeSystem.Metadata
 						LoadProperty(mosaType, property, propertyDef);
 					}
 
-					type.Properties.Add(mosaProperty);
+					type.Properties.TryAdd(mosaProperty);
 					metadata.Cache.AddProperty(mosaProperty);
 					LoadedUnits.Add(mosaProperty);
 				}

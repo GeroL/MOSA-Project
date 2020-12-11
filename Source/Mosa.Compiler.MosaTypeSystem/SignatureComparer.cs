@@ -10,6 +10,15 @@ namespace Mosa.Compiler.MosaTypeSystem
 	{
 		public static bool Equals(MosaType x, MosaType y)
 		{
+			if (x is null && !(y is null))
+				return false;
+
+			if (!(x is null) && y is null)
+				return false;
+
+			if (x is null && y is null)
+				return true;
+
 			if (x.TypeCode != y.TypeCode)
 				return false;
 
